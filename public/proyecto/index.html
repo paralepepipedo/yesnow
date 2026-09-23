@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Proyecto — Bitácora Compartida</title>
+<meta name="theme-color" content="#0052ea">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<link rel="apple-touch-icon" href="/icons/icon.svg">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/css/base.css">
+<style>
+body{padding-bottom:100px}
+.appbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
+.appbar .back{color:var(--text-dim);font-size:20px;line-height:1;border:0;background:none;padding:2px;text-decoration:none}
+.appbar h2{font-size:14.5px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.appbar .who{display:flex;align-items:center;gap:10px}
+.bell{position:relative;border:0;background:none;color:var(--text);padding:4px}
+.bell .dot{position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid var(--surface);display:none}
+.bell .dot.on{display:block}
+
+.pagepad{padding:16px;max-width:1180px;margin:0 auto}
+.hscroll{display:flex;gap:10px;overflow-x:auto;overflow-y:visible;padding:8px 14px 6px;margin:0 -14px;scroll-snap-type:x proximity}
+.empty-mini{color:var(--text-dim);font-size:12px;padding:10px 2px}
+
+.d-hero{display:flex;gap:16px;align-items:center;margin-bottom:18px}
+.d-ring{width:88px;height:88px;border-radius:50%;flex:none;display:grid;place-items:center}
+.d-ring .hole{width:64px;height:64px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.d-ring .hole b{font-family:'IBM Plex Mono',monospace;font-size:19px;line-height:1}
+.d-ring .hole small{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em}
+.d-chips{display:flex;flex-direction:column;gap:8px;flex:1}
+.d-chip{display:flex;align-items:center;gap:9px;border:2px solid var(--border);background:var(--surface);border-radius:12px;padding:9px 11px;box-shadow:var(--shadow)}
+.d-chip .ic{width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.d-chip b{font-family:'IBM Plex Mono',monospace;font-size:16px}
+.d-chip span{font-size:11px;color:var(--text-dim);display:block}
+
+.tcard{scroll-snap-align:start;flex:none;width:138px;border-radius:14px;border:2px solid var(--border);background:var(--surface);overflow:hidden;text-align:left;color:var(--text);box-shadow:var(--shadow)}
+.tcard .bar{height:5px}
+.tcard .body{padding:11px}
+.tcard .num{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;line-height:1}
+.tcard .name{font-size:11.5px;font-weight:600;margin-top:6px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.tcard .who{display:flex;align-items:center;gap:5px;margin-top:8px}
+.tcard .who .avatar{width:18px;height:18px;font-size:8px}
+.tcard .who span{font-size:10px;color:var(--text-dim)}
+.tcard.on{outline:2px solid var(--accent);outline-offset:-1px}
+.detail-panel{border:2px solid var(--border);background:var(--surface-2);border-radius:12px;padding:12px;margin-top:10px;font-size:12.5px}
+.detail-panel .dtitle{font-weight:700;font-size:13px;margin-bottom:4px}
+.detail-panel .drow{display:flex;justify-content:space-between;color:var(--text-dim);padding:3px 0}
+.detail-panel .drow b{color:var(--text);font-weight:600}
+
+.ckfrac{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-dim);text-transform:none;letter-spacing:0;font-weight:600}
+.ckgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15px,1fr));gap:4px;margin-bottom:10px}
+.ckcell{aspect-ratio:1;border-radius:4px;background:var(--surface-2);border:1.5px solid var(--border);cursor:pointer;padding:0}
+.ckcell.implementado{background:var(--ok);border-color:var(--ok)}
+.ckcell.parcial{background:var(--warn-bg);border-color:var(--warn)}
+.ckcell.on{outline:2px solid var(--accent);outline-offset:1px}
+.ckcell.dim{opacity:.3}
+.cklegend{display:flex;gap:12px;font-size:10px;color:var(--text-dim);flex-wrap:wrap;margin-bottom:4px}
+.cklegend i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:-1px}
+.cknext{font-size:11px;color:var(--text-dim);border-top:1px solid var(--border);padding-top:9px;margin-top:9px}
+.cknext b{color:var(--text);font-weight:700}
+.cknext .tag{margin-left:6px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--surface-2);color:var(--text-dim)}
+.cknext .tag.prio-alta{background:var(--danger-bg);color:var(--danger)}
+.cknext .tag.prio-media{background:var(--warn-bg);color:var(--warn)}
+
+.idea-section{background:linear-gradient(160deg, var(--accent-soft), var(--surface) 60%);border:2px solid var(--accent);border-radius:16px;padding:14px;margin-bottom:14px;box-shadow:var(--shadow)}
+.idea-section h3{color:var(--accent-ink)}
+.idea-section .bulb{width:26px;height:26px;border-radius:8px;background:var(--accent);color:#fff;display:grid;place-items:center;flex:none}
+.idea-section h3 .htitle{display:flex;align-items:center;gap:8px}
+
+.icard{scroll-snap-align:start;flex:none;width:170px;border:2px solid var(--border);border-radius:12px;background:var(--surface);padding:10px;text-align:left;color:var(--text);box-shadow:var(--shadow)}
+.icard .iteaser{font-size:11.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.icard .imeta{font-size:10px;color:var(--text-dim);margin-top:7px}
+.icard.on{outline:2px solid var(--accent);outline-offset:-1px}
+
+.fab{position:fixed;right:18px;bottom:18px;z-index:20}
+.fab button{background:var(--accent);color:#fff;border:0;border-radius:99px;padding:13px 20px;font-weight:700;font-size:13px;
+  display:flex;align-items:center;gap:7px;box-shadow:0 10px 24px -8px rgba(0,0,0,.4)}
+
+.d-desktop{display:none}
+.panel{border:2px solid var(--border);background:var(--surface);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+.panel h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text);font-weight:800;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.panel h3 a{font-size:11px;font-weight:700;color:var(--accent)}
+
+.hero{display:grid;grid-template-columns:auto 1fr auto;gap:22px;align-items:center;background:var(--surface);border:2px solid var(--border);
+  border-radius:18px;padding:18px 22px;margin-bottom:16px;box-shadow:var(--shadow)}
+.hring{width:88px;height:88px;border-radius:50%;display:grid;place-items:center;flex:none}
+.hring .hole{width:66px;height:66px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;border:2px solid var(--bg)}
+.hring .hole b{font-family:'IBM Plex Mono',monospace;font-size:21px;line-height:1}
+.hring .hole small{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em}
+.hstats{display:flex;gap:26px}
+.hstat b{display:block;font-family:'IBM Plex Mono',monospace;font-size:20px}
+.hstat span{font-size:10.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em}
+.hnext{background:var(--accent-soft);border-radius:12px;padding:11px 15px;text-align:right;min-width:180px}
+.hnext .hn-label{font-size:9.5px;color:var(--accent-ink);text-transform:uppercase;letter-spacing:.06em;font-weight:700;opacity:.75}
+.hnext .hn-name{font-size:12.5px;font-weight:700;color:var(--accent-ink);margin-top:3px}
+.hnext .hn-when{font-size:11px;color:var(--accent-ink);opacity:.8;margin-top:2px}
+
+.userfilter{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.userfilter .uf-label{font-size:11px;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
+.userfilter button{display:flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);
+  border-radius:99px;padding:5px 12px 5px 5px;font-size:11.5px;font-weight:700;font-family:inherit;cursor:pointer}
+.userfilter button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.userfilter button .avatar{width:18px;height:18px;font-size:8px;margin:0}
+
+.grid2{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px}
+
+.mgant{overflow-x:auto;position:relative}
+.mgdays{display:flex;align-items:center;font-size:9px;color:var(--text-dim);margin-bottom:6px;gap:2px}
+.mgday{width:20px;text-align:center;flex:none}
+.mgrow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.mgrow:last-child{margin-bottom:0}
+.mgname{width:142px;flex:none;font-size:11.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default;
+  position:sticky;left:0;background:var(--surface);z-index:1;padding-right:6px}
+.mgtrack{position:relative;height:16px;flex:none;display:flex;gap:2px}
+.mgcell{width:20px;flex:none;height:16px;border-radius:3px;background:var(--surface-2);cursor:pointer}
+.mgcell.hl{background:var(--accent-soft)}
+.mgday{cursor:pointer;border-radius:3px}
+.mgday.hl{color:var(--accent-ink);font-weight:800;background:var(--accent-soft)}
+.mgbar{position:absolute;height:16px;border-radius:6px;top:0;cursor:pointer;display:flex;align-items:center;padding:0 6px;overflow:hidden}
+.mgbar span{font-size:9px;color:#fff;font-weight:700;white-space:nowrap}
+.mg-tip-float{position:fixed;z-index:999;max-width:220px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 10px;
+  font-size:11px;font-weight:600;color:var(--text);box-shadow:0 12px 24px -12px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .12s}
+.mg-tip-float.on{opacity:1}
+
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tgcard{border:1px solid var(--border);border-radius:12px;padding:11px;cursor:pointer;transition:border-color .15s,transform .15s;background:var(--bg);text-align:left}
+.tgcard:hover{border-color:var(--accent);transform:translateY(-2px)}
+.tgcard .tgtop{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.tgcard .tgname{font-size:12px;font-weight:700;line-height:1.3}
+.tgcard .tgcd{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;flex:none}
+.tgcard .tgbottom{display:flex;align-items:center;justify-content:space-between}
+.tgcard .tgwho{display:flex;align-items:center;gap:4px}
+.tgcard .tgwho .avatar{width:18px;height:18px;font-size:8px}
+.tgcard .tgfase{font-size:9.5px;color:var(--text-dim)}
+
+.cchead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.btn-add{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--accent);color:#fff;font-weight:800;font-size:11.5px;
+  padding:8px 14px;border-radius:9px;box-shadow:var(--shadow)}
+.btn-add:hover{filter:brightness(1.08)}
+
+.ideacards{display:flex;flex-direction:column;gap:9px}
+.ideac{border:2px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:11px 13px;background:var(--surface);
+  cursor:pointer;transition:transform .12s,background .12s;text-align:left;width:100%;font-family:inherit;box-shadow:var(--shadow)}
+.ideac:hover{transform:translateX(2px)}
+.ideac.on{background:var(--accent-soft)}
+.ideac .itext{font-size:13px;line-height:1.45;color:var(--text);font-style:italic;font-weight:500}
+.ideac .imeta{font-size:10.5px;color:var(--text-dim);margin-top:8px;display:flex;align-items:center;gap:7px}
+.ideac .imeta .avatar{width:18px;height:18px;font-size:8px}
+.ideac .iconv{margin-left:auto;font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:var(--ok-bg);color:var(--ok);white-space:nowrap}
+.idea-actions{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+.idea-actions button{border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.idea-actions button:hover{color:var(--text);border-color:var(--accent)}
+.idea-actions button.del:hover{color:var(--danger);border-color:var(--danger)}
+
+@media (min-width: 900px){
+  .d-mobile{display:none}
+  .d-desktop{display:block}
+}
+@media (max-width: 1180px){
+  .grid2{grid-template-columns:1fr}
+}
+
+.formf{margin-top:0;display:flex;flex-direction:column;gap:12px;text-align:left}
+.formf label{font-size:11.5px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px}
+.formf input,.formf textarea{width:100%;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:10px;padding:10px 11px;font-family:inherit;font-size:13px}
+.formf textarea{resize:vertical;min-height:60px}
+.checkrow{display:flex;gap:14px}
+.checkrow label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text)}
+.notif-list{max-height:340px;overflow-y:auto;text-align:left}
+.notif-item{padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.notif-item:last-child{border-bottom:0}
+.notif-item .nmeta{font-size:10.5px;color:var(--text-dim);margin-top:3px}
+</style>
+</head>
+<body>
+<div class="appbar">
+  <a class="back" href="/proyectos">‹</a>
+  <h2 id="pTitle">Cargando…</h2>
+  <div class="who">
+    <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema"></button>
+    <button class="bell" id="btnBell"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="dot" id="bellDot"></span></button>
+    <div class="avatar" id="meAvatar">··</div>
+  </div>
+</div>
+<div class="subnav">
+  <a id="navDash" class="on">Dashboard</a>
+  <a id="navGantt">Gantt</a>
+  <a id="navCheck">Checklist</a>
+</div>
+
+<!-- MOBILE -->
+<div class="pagepad d-mobile">
+  <div class="section-card">
+    <div class="d-hero">
+      <div class="d-ring" id="heroRing"><div class="hole"><b id="heroNum">0</b><small>pendientes</small></div></div>
+      <div class="d-chips">
+        <div class="d-chip"><div class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div><b id="sharedNum">0</b><span>tareas compartidas</span></div></div>
+        <div class="d-chip"><div class="ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.74V17h8v-2.26A7 7 0 0 0 12 2z"/></svg></div><div><b id="ideasNum">0</b><span>ideas</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-card">
+    <h3>Pendientes <span class="count mono" id="pendCount">0</span></h3>
+    <div class="hscroll" id="taskCarousel"></div>
+    <div class="detail-panel" id="taskDetail" hidden></div>
+  </div>
+
+  <div class="section-card">
+    <h3>Checklist <span class="ckfrac mono" id="ckFracM">0/0</span></h3>
+    <div class="ckgrid" id="ckGridM"></div>
+    <div class="cklegend" id="ckLegendM"></div>
+    <div class="cknext" id="ckNextM" hidden></div>
+    <div class="detail-panel" id="ckDetail" hidden></div>
+  </div>
+
+  <div class="idea-section">
+    <h3><span class="htitle"><span class="bulb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.75.75 1.23 1.5 1.41 2.5"/></svg></span> Ideas recientes</span> <button class="addbtn" id="btnAddIdeaM">+</button></h3>
+    <div class="hscroll" id="ideaCarousel"></div>
+    <div class="detail-panel" id="ideaDetail" hidden></div>
+  </div>
+</div>
+
+<!-- DESKTOP -->
+<div class="pagepad d-desktop">
+  <div class="hero">
+    <div class="hring" id="heroRingD"><div class="hole"><b id="heroNumD">0</b><small>pendientes</small></div></div>
+    <div class="hstats">
+      <div class="hstat"><b id="statOverdue" style="color:var(--danger)">0</b><span>Vencidas</span></div>
+      <div class="hstat"><b id="statWeek" style="color:var(--warn)">0</b><span>Esta semana</span></div>
+      <div class="hstat"><b id="statShared">0</b><span>Compartidas</span></div>
+      <div class="hstat"><b id="statCk" style="color:var(--ok)">0%</b><span>Checklist</span></div>
+    </div>
+    <div class="hnext" id="hnextBox" hidden>
+      <div class="hn-label">Próxima en vencer</div>
+      <div class="hn-name" id="hnName"></div>
+      <div class="hn-when" id="hnWhen"></div>
+    </div>
+  </div>
+
+  <div class="userfilter" id="userFilterD">
+    <span class="uf-label">Ver de:</span>
+  </div>
+
+  <div class="grid2">
+    <div class="col">
+      <div class="panel">
+        <h3>Próximos 14 días <a href="#" id="linkGanttD">Ver Gantt completo →</a></h3>
+        <div class="mgant">
+          <div class="mgdays" id="mgDays"></div>
+          <div id="mgRows"></div>
+          <div class="empty-mini" id="mgEmpty" hidden>Sin tareas en este rango para este filtro.</div>
+          <div class="mg-tip-float" id="mgTip"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>Tareas pendientes</h3>
+        <div class="tgrid" id="taskGridD"></div>
+        <div class="empty-mini" id="taskGridDEmpty" hidden>Sin tareas pendientes para este filtro.</div>
+        <div class="detail-panel" id="taskDetailD" hidden></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="panel">
+        <h3>Checklist <span class="ckfrac mono" id="ckFracD">0/0</span></h3>
+        <div class="ckgrid" id="ckGridD"></div>
+        <div class="empty-mini" id="ckRingsDEmpty" hidden>Este proyecto no tiene checklist cargado.</div>
+        <div class="cklegend" id="ckLegendD"></div>
+        <div class="cknext" id="ckNextD" hidden></div>
+        <div class="detail-panel" id="ckDetailD" hidden></div>
+      </div>
+      <div class="idea-section">
+        <div class="cchead">
+          <h3 style="margin:0"><span class="htitle"><span class="bulb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.75.75 1.23 1.5 1.41 2.5"/></svg></span> Ideas</span></h3>
+          <button class="btn-add" id="btnAddIdeaD"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nueva idea</button>
+        </div>
+        <div class="ideacards" id="ideaCardsD"></div>
+        <div class="empty-mini" id="ideaCardsDEmpty" hidden>Sin ideas para este filtro.</div>
+        <div class="detail-panel" id="ideaDetailD" hidden></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fab"><button id="btnAddTask">+ Nueva tarea</button></div>
+
+<script src="/js/app.js"></script>
+<script>
+(function(){
+  const proyectoId = location.pathname.split('/').filter(Boolean)[1];
+  let usuarios = [];
+  let me = null;
+  let filterUser = 'all';
+  let cacheTareas = [], cacheIdeas = [];
+  const PRIO_LABEL_D = { alta:'Alta', media:'Media', baja:'Baja' };
+  const PRIO_RANK_D = { alta:0, media:1, baja:2 };
+  const STATUS_LABEL_D = { implementado:'Implementado', parcial:'Parcial', pendiente:'Pendiente' };
+
+  function countdown(fechaFin){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const end = new Date(fechaFin + 'T00:00:00');
+    const diff = Math.round((end - today) / 86400000);
+    if (diff < 0) return { color:'var(--danger)', num:diff+'d', label: diff===-1?'Vencida hace 1 día':('Vencida hace '+(-diff)+' días'), bucket:'danger', diff };
+    if (diff === 0) return { color:'var(--warn)', num:'Hoy', label:'Vence hoy', bucket:'warn', diff };
+    if (diff <= 3) return { color:'var(--warn)', num:diff+'d', label:'Vence en '+diff+' días', bucket:'warn', diff };
+    return { color:'var(--ok)', num:diff+'d', label:'Vence en '+diff+' días', bucket:'ok', diff };
+  }
+  function miniGanttPos(t, days){
+    days = days || 14;
+    const start = new Date((t.fechaInicio||t.fechaFin) + 'T00:00:00');
+    const end = new Date(t.fechaFin + 'T00:00:00');
+    const todayD = new Date(); todayD.setHours(0,0,0,0);
+    let rawOffset = Math.round((start - todayD) / 86400000);
+    let dur = Math.max(1, Math.round((end - start) / 86400000) + 1);
+    let offset = rawOffset;
+    if (offset < 0) { dur += offset; offset = 0; }
+    dur = Math.max(1, Math.min(dur, days - offset));
+    offset = Math.min(offset, days - 1);
+    return { rawOffset, offset, dur };
+  }
+  function matchesUser(u){ return filterUser === 'all' || (u||[]).some(x => x.id === filterUser); }
+  function avatarHtml(u, size){
+    const s = size || 18;
+    return '<div class="avatar '+(u.avatar_color||'')+'" style="width:'+s+'px;height:'+s+'px;font-size:'+Math.round(s*0.44)+'px">'+u.nombre.slice(0,2).toUpperCase()+'</div>';
+  }
+
+  async function init(){
+    let meRes, usuariosRes, proyectoRes;
+    try{
+      [meRes, usuariosRes, proyectoRes] = await Promise.all([
+        BT.api('/api/auth/me'),
+        BT.api('/api/auth/usuarios'),
+        BT.api('/api/proyectos/' + proyectoId),
+      ]);
+    }catch(e){
+      if (!document.getElementById('meAvatar').textContent.trim()) { location.href='/'; return; }
+      document.getElementById('pTitle').textContent = 'Proyecto no encontrado'; return;
+    }
+    me = meRes.usuario; usuarios = usuariosRes.usuarios;
+    document.getElementById('meAvatar').textContent = me.nombre.slice(0,2).toUpperCase();
+    document.getElementById('meAvatar').className = 'avatar ' + me.avatar_color;
+    document.getElementById('pTitle').textContent = proyectoRes.proyecto.nombre;
+    document.title = proyectoRes.proyecto.nombre + ' — Bitácora Compartida';
+    document.getElementById('navGantt').href = '/proyecto/' + proyectoId + '/gantt';
+    document.getElementById('navCheck').href = '/proyecto/' + proyectoId + '/checklist';
+    document.getElementById('linkGanttD').href = '/proyecto/' + proyectoId + '/gantt';
+
+    const ufd = document.getElementById('userFilterD');
+    ufd.innerHTML += '<button class="on" data-u="all">Todos</button>' +
+      usuarios.map(u => `<button data-u="${u.id}">${avatarHtml(u,18)}${u.nombre}</button>`).join('');
+    ufd.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if(!b) return;
+      filterUser = b.dataset.u;
+      ufd.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.u===filterUser));
+      applyDesktopFilter();
+    });
+
+    refreshBell();
+    loadAll();
+  }
+
+  async function refreshBell(){
+    try{
+      const d = await BT.api('/api/notificaciones/no-leidas');
+      document.getElementById('bellDot').classList.toggle('on', d.count > 0);
+    }catch(e){}
+  }
+
+  async function loadAll(){
+    const [tareasRes, ckRes, ideasRes] = await Promise.all([
+      BT.api('/api/proyectos/' + proyectoId + '/tareas'),
+      BT.api('/api/proyectos/' + proyectoId + '/checklist'),
+      BT.api('/api/proyectos/' + proyectoId + '/ideas'),
+    ]);
+    renderTasks(tareasRes.tareas.filter(t => t.estado !== 'completada'));
+    renderChecklist(ckRes.items);
+    renderIdeas(ideasRes.ideas);
+  }
+
+  function renderTasks(tareas){
+    tareas.sort((a,b) => new Date(a.fechaFin) - new Date(b.fechaFin));
+    const withCd = tareas.map(t => Object.assign({}, t, { cd: countdown(t.fechaFin) }));
+    cacheTareas = withCd;
+    const overdue = withCd.filter(t => t.cd.bucket === 'danger').length;
+    const warn = withCd.filter(t => t.cd.bucket === 'warn').length;
+    const ok = withCd.filter(t => t.cd.bucket === 'ok').length;
+    const total = withCd.length;
+    const shared = withCd.filter(t => (t.asignados||[]).length > 1).length;
+    const estaSemana = withCd.filter(t => t.cd.diff >= 0 && t.cd.diff <= 6).length;
+
+    document.getElementById('pendCount').textContent = total;
+    document.getElementById('heroNum').textContent = total;
+    document.getElementById('sharedNum').textContent = shared;
+    document.getElementById('statOverdue').textContent = overdue;
+    document.getElementById('statWeek').textContent = estaSemana;
+    document.getElementById('statShared').textContent = shared;
+    document.getElementById('heroNumD').textContent = total;
+
+    const ring = document.getElementById('heroRing');
+    const ringD = document.getElementById('heroRingD');
+    const gradient = total === 0 ? 'conic-gradient(var(--surface-2) 0 100%)'
+      : (() => { const p1 = overdue/total*100, p2 = p1 + warn/total*100; return `conic-gradient(var(--danger) 0 ${p1}%, var(--warn) ${p1}% ${p2}%, var(--ok) ${p2}% 100%)`; })();
+    ring.style.background = gradient;
+    ringD.style.background = gradient;
+
+    const carousel = document.getElementById('taskCarousel');
+    const detail = document.getElementById('taskDetail');
+    if (!withCd.length){
+      carousel.innerHTML = '<div class="empty-mini">Sin tareas pendientes. Toca "+ Nueva tarea" para crear la primera.</div>';
+      detail.hidden = true;
+    } else {
+      carousel.innerHTML = withCd.map((t,i) => `
+        <button class="tcard${i===0?' on':''}" data-i="${i}">
+          <div class="bar" style="background:${t.cd.color}"></div>
+          <div class="body"><div class="num" style="color:${t.cd.color}">${t.cd.num}</div>
+            <div class="name">${t.nombre}</div>
+            <div class="who">${(t.asignados||[]).slice(0,2).map(u=>avatarHtml(u,18)).join('')}<span>${(t.asignados||[]).map(u=>u.nombre).join(', ')||'Sin asignar'}</span></div>
+          </div>
+        </button>`).join('');
+      carousel.onclick = (e) => {
+        const b = e.target.closest('.tcard'); if(!b) return;
+        carousel.querySelectorAll('.tcard').forEach(x=>x.classList.toggle('on', x===b));
+        showTaskDetail(withCd[+b.dataset.i]);
+      };
+      showTaskDetail(withCd[0]);
+    }
+
+    renderHnext(withCd);
+    renderMiniGantt();
+    renderTaskGridD();
+  }
+
+  function renderHnext(withCd){
+    const box = document.getElementById('hnextBox');
+    if (!withCd.length){ box.hidden = true; return; }
+    const t = withCd[0];
+    box.hidden = false;
+    document.getElementById('hnName').textContent = t.nombre;
+    document.getElementById('hnWhen').textContent = t.cd.label + (t.asignados&&t.asignados.length ? ' · ' + t.asignados.map(u=>u.nombre).join(', ') : '');
+  }
+
+  const MG_DAYS = 30, MG_COLW = 20;
+  const MG_DAYNAMES = ['dom','lun','mar','mié','jue','vie','sáb'];
+  const MG_MONTHNAMES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  let mgDayDates = [];
+  function renderMiniGantt(){
+    const DAYNAMES = ['D','L','M','M','J','V','S'];
+    const today = new Date(); today.setHours(0,0,0,0);
+    const trackW = MG_DAYS * MG_COLW;
+    mgDayDates = [];
+    let daysHtml = '<div class="mgname" style="cursor:default"></div>';
+    for (let i=0;i<MG_DAYS;i++){ const d = new Date(today); d.setDate(d.getDate()+i); mgDayDates.push(d); daysHtml += `<div class="mgday" data-day="${i}">${DAYNAMES[d.getDay()]}</div>`; }
+    document.getElementById('mgDays').innerHTML = daysHtml;
+
+    const rows = cacheTareas.filter(t => matchesUser(t.asignados) && miniGanttPos(t, MG_DAYS).rawOffset < MG_DAYS);
+    document.getElementById('mgEmpty').hidden = !!rows.length;
+    document.getElementById('mgRows').innerHTML = rows.map(t => {
+      const pos = miniGanttPos(t, MG_DAYS);
+      let cells = ''; for (let d=0; d<MG_DAYS; d++) cells += `<div class="mgcell" data-day="${d}"></div>`;
+      const left = (pos.offset/MG_DAYS*100), width = (pos.dur/MG_DAYS*100);
+      return `<div class="mgrow">
+        <div class="mgname" data-id="${t.id}">${t.nombre}</div>
+        <div class="mgtrack" style="width:${trackW}px">${cells}<div class="mgbar" data-id="${t.id}" style="left:${left}%;width:${width}%;background:${t.color||'#888'}"><span>${t.nombre}</span></div></div>
+      </div>`;
+    }).join('');
+    const rowsEl = document.getElementById('mgRows');
+    rowsEl.onclick = (e) => {
+      const cell = e.target.closest('[data-day]');
+      const el = e.target.closest('[data-id]');
+      if (el){ const t = cacheTareas.find(x=>x.id===el.dataset.id); if (t) showTaskDetailD(t); return; }
+      if (cell) highlightMgDay(cell, +cell.dataset.day);
+    };
+    rowsEl.ondblclick = (e) => {
+      const bar = e.target.closest('.mgbar'); if(!bar) return;
+      const t = cacheTareas.find(x=>x.id===bar.dataset.id); if (t) showTaskDetailD(t);
+    };
+    rowsEl.onmouseover = (e) => {
+      const el = e.target.closest('.mgname'); if(!el) return;
+      if (el.scrollWidth <= el.clientWidth) return;
+      showMgTip(el, el.textContent);
+    };
+    rowsEl.onmouseout = (e) => { if (e.target.closest('.mgname')) hideMgTip(); };
+    document.getElementById('mgDays').onclick = (e) => {
+      const cell = e.target.closest('[data-day]'); if(!cell) return;
+      highlightMgDay(cell, +cell.dataset.day);
+    };
+  }
+
+  let mgDayTipTimer;
+  function highlightMgDay(cellEl, dayIdx){
+    document.querySelectorAll('#mgDays [data-day].hl, #mgRows [data-day].hl').forEach(x => x.classList.remove('hl'));
+    document.querySelectorAll(`#mgDays [data-day="${dayIdx}"], #mgRows [data-day="${dayIdx}"]`).forEach(x => x.classList.add('hl'));
+    const d = mgDayDates[dayIdx];
+    if (d) showMgTip(cellEl, MG_DAYNAMES[d.getDay()] + ' ' + d.getDate() + ' ' + MG_MONTHNAMES[d.getMonth()]);
+    clearTimeout(mgDayTipTimer);
+    mgDayTipTimer = setTimeout(hideMgTip, 2500);
+  }
+
+  function showMgTip(el, text){
+    const tip = document.getElementById('mgTip');
+    tip.textContent = text;
+    tip.classList.add('on');
+    const r = el.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    const left = Math.max(8, r.left);
+    let top = r.bottom + 6;
+    if (top + tipRect.height > window.innerHeight - 8) top = r.top - tipRect.height - 6;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function hideMgTip(){ document.getElementById('mgTip').classList.remove('on'); }
+
+  function renderTaskGridD(){
+    const rows = cacheTareas.filter(t => matchesUser(t.asignados));
+    const grid = document.getElementById('taskGridD');
+    document.getElementById('taskGridDEmpty').hidden = !!rows.length;
+    document.getElementById('taskDetailD').hidden = !rows.length;
+    grid.innerHTML = rows.map(t => `
+      <button class="tgcard" data-id="${t.id}">
+        <div class="tgtop"><div class="tgname">${t.nombre}</div><div class="tgcd" style="color:${t.cd.color}">${t.cd.num}</div></div>
+        <div class="tgbottom">
+          <div class="tgwho">${(t.asignados||[]).map(u=>avatarHtml(u,18)).join('')}</div>
+          <div class="tgfase">${t.fase||''}</div>
+        </div>
+      </button>`).join('');
+    grid.onclick = (e) => { const b = e.target.closest('.tgcard'); if(!b) return; showTaskDetailD(cacheTareas.find(x=>x.id===b.dataset.id)); };
+    if (rows.length) showTaskDetailD(rows[0]);
+  }
+
+  function showTaskDetailD(t){
+    const d = document.getElementById('taskDetailD');
+    d.hidden = false;
+    d.innerHTML = `<div class="dtitle">${t.nombre}</div>
+      ${t.fase?`<div class="drow"><span>Fase</span><b>${t.fase}</b></div>`:''}
+      <div class="drow"><span>Responsable</span><b>${(t.asignados||[]).map(u=>u.nombre).join(', ')||'Sin asignar'}</b></div>
+      <div class="drow"><span>Estado</span><b style="color:${t.cd.color}">${t.cd.label}</b></div>`;
+  }
+
+  function applyDesktopFilter(){
+    renderMiniGantt();
+    renderTaskGridD();
+    renderCkGridD();
+    renderIdeaCardsD();
+  }
+
+  function showTaskDetail(t){
+    const detail = document.getElementById('taskDetail');
+    detail.hidden = false;
+    detail.innerHTML = `<div class="dtitle">${t.nombre}</div>
+      <div class="drow"><span>Responsable</span><b>${(t.asignados||[]).map(u=>u.nombre).join(', ')||'Sin asignar'}</b></div>
+      <div class="drow"><span>Estado</span><b style="color:${t.cd.color}">${t.cd.label}</b></div>`;
+  }
+
+  let cacheChecklist = [];
+
+  function renderChecklist(items){
+    cacheChecklist = items;
+    const ok = items.filter(i=>i.estado==='implementado').length;
+    document.getElementById('statCk').textContent = items.length ? Math.round(ok / items.length * 100) + '%' : '—';
+    renderCkGridM(items);
+    renderCkGridD();
+  }
+
+  function ckCellClass(it){ return it.estado==='implementado' ? 'implementado' : it.estado==='parcial' ? 'parcial' : ''; }
+  function pickNextItem(list){
+    const pend = list.filter(it => it.estado !== 'implementado');
+    pend.sort((a,b) => (a.prioridad?PRIO_RANK_D[a.prioridad]:9) - (b.prioridad?PRIO_RANK_D[b.prioridad]:9));
+    return pend[0] || null;
+  }
+  function ckDetailHtml(it){
+    return `<div class="dtitle">${it.nombre}</div>
+      <div class="drow"><span>Categoría</span><b>${it.categoria}</b></div>
+      ${it.prioridad?`<div class="drow"><span>Prioridad</span><b>${PRIO_LABEL_D[it.prioridad]}</b></div>`:''}
+      <div class="drow"><span>Estado</span><b style="color:${it.estado==='implementado'?'var(--ok)':it.estado==='parcial'?'var(--warn)':'var(--text-dim)'}">${STATUS_LABEL_D[it.estado]}</b></div>`;
+  }
+  function ckNextHtml(next){
+    if (!next) return 'Todo revisado <b style="color:var(--ok)">✓</b>';
+    return `Siguiente: <b>${next.nombre}</b>${next.prioridad?`<span class="tag prio-${next.prioridad}">${PRIO_LABEL_D[next.prioridad]}</span>`:''}`;
+  }
+
+  function renderCkGridM(items){
+    const grid = document.getElementById('ckGridM');
+    const ok = items.filter(i=>i.estado==='implementado').length, warn = items.filter(i=>i.estado==='parcial').length, total = items.length;
+    document.getElementById('ckFracM').textContent = ok + '/' + total;
+    const detail = document.getElementById('ckDetail');
+    if (!total){
+      grid.innerHTML = '<div class="empty-mini">Este proyecto todavía no tiene checklist.</div>';
+      document.getElementById('ckLegendM').innerHTML = ''; document.getElementById('ckNextM').hidden = true; detail.hidden = true;
+      return;
+    }
+    grid.innerHTML = items.map((it,i) => `<button class="ckcell ${ckCellClass(it)}" data-i="${i}" title="${it.nombre.replace(/"/g,'&quot;')}"></button>`).join('');
+    grid.onclick = (e) => {
+      const b = e.target.closest('.ckcell'); if(!b) return;
+      grid.querySelectorAll('.ckcell').forEach(c=>c.classList.remove('on')); b.classList.add('on');
+      const it = items[+b.dataset.i];
+      detail.hidden = false; detail.innerHTML = ckDetailHtml(it);
+      detail.ondblclick = () => location.href = '/proyecto/' + proyectoId + '/checklist?item=' + it.id;
+    };
+    grid.ondblclick = (e) => {
+      const b = e.target.closest('.ckcell'); if(!b) return;
+      location.href = '/proyecto/' + proyectoId + '/checklist?item=' + items[+b.dataset.i].id;
+    };
+    document.getElementById('ckLegendM').innerHTML =
+      `<span><i style="background:var(--ok)"></i>Implementado · ${ok}</span>
+       <span><i style="background:var(--warn-bg);border:1px solid var(--warn)"></i>Parcial · ${warn}</span>
+       <span><i style="background:var(--surface-2);border:1px solid var(--border)"></i>Pendiente · ${total-ok-warn}</span>`;
+    const nextBox = document.getElementById('ckNextM');
+    nextBox.hidden = false;
+    nextBox.innerHTML = ckNextHtml(pickNextItem(items));
+  }
+
+  function renderCkGridD(){
+    const items = cacheChecklist;
+    const grid = document.getElementById('ckGridD');
+    const detail = document.getElementById('ckDetailD');
+    const ok = items.filter(i=>i.estado==='implementado').length, warn = items.filter(i=>i.estado==='parcial').length, total = items.length;
+    document.getElementById('ckFracD').textContent = ok + '/' + total;
+    document.getElementById('ckRingsDEmpty').hidden = !!total;
+    if (!total){ grid.innerHTML = ''; document.getElementById('ckLegendD').innerHTML=''; document.getElementById('ckNextD').hidden = true; detail.hidden = true; return; }
+    grid.innerHTML = items.map((it,i) => {
+      const dim = filterUser !== 'all' && it.estado !== 'implementado' && !matchesUser(it.asignados);
+      return `<button class="ckcell ${ckCellClass(it)}${dim?' dim':''}" data-i="${i}" title="${it.nombre.replace(/"/g,'&quot;')}"></button>`;
+    }).join('');
+    grid.onclick = (e) => {
+      const b = e.target.closest('.ckcell'); if(!b) return;
+      grid.querySelectorAll('.ckcell').forEach(c=>c.classList.remove('on')); b.classList.add('on');
+      const it = items[+b.dataset.i];
+      detail.hidden = false; detail.innerHTML = ckDetailHtml(it);
+      detail.ondblclick = () => location.href = '/proyecto/' + proyectoId + '/checklist?item=' + it.id;
+    };
+    grid.ondblclick = (e) => {
+      const b = e.target.closest('.ckcell'); if(!b) return;
+      location.href = '/proyecto/' + proyectoId + '/checklist?item=' + items[+b.dataset.i].id;
+    };
+    document.getElementById('ckLegendD').innerHTML =
+      `<span><i style="background:var(--ok)"></i>Implementado · ${ok}</span>
+       <span><i style="background:var(--warn-bg);border:1px solid var(--warn)"></i>Parcial · ${warn}</span>
+       <span><i style="background:var(--surface-2);border:1px solid var(--border)"></i>Pendiente · ${total-ok-warn}</span>`;
+    const scope = filterUser === 'all' ? items : items.filter(it => matchesUser(it.asignados));
+    const nextBox = document.getElementById('ckNextD');
+    nextBox.hidden = false;
+    nextBox.innerHTML = ckNextHtml(pickNextItem(scope));
+  }
+
+  function renderIdeas(ideas){
+    const carousel = document.getElementById('ideaCarousel');
+    const detail = document.getElementById('ideaDetail');
+    document.getElementById('ideasNum').textContent = ideas.length;
+
+    if (!ideas.length){
+      carousel.innerHTML = '<div class="empty-mini">Sin ideas todavía.</div>';
+      detail.hidden = true;
+    } else {
+      carousel.innerHTML = ideas.map((idea,i) => `
+        <button class="icard${i===0?' on':''}" data-i="${i}">
+          <div class="iteaser">"${idea.texto}"</div>
+          <div class="imeta">${idea.autor||'—'} · ${timeAgo(idea.creadoEn)}</div>
+        </button>`).join('');
+      carousel.onclick = (e) => {
+        const b = e.target.closest('.icard'); if(!b) return;
+        carousel.querySelectorAll('.icard').forEach(x=>x.classList.toggle('on', x===b));
+        showIdeaDetail(ideas[+b.dataset.i]);
+      };
+      showIdeaDetail(ideas[0]);
+    }
+
+    cacheIdeas = ideas;
+    renderIdeaCardsD();
+  }
+
+  function showIdeaDetail(idea){
+    const detail = document.getElementById('ideaDetail');
+    detail.hidden = false;
+    detail.innerHTML = `<div class="dtitle">${idea.autor||'—'} · ${timeAgo(idea.creadoEn)}</div><div style="color:var(--text-dim)">"${idea.texto}"</div>`;
+  }
+
+  function renderIdeaCardsD(){
+    const uName = usuarios.find(u=>u.id===filterUser)?.nombre;
+    const rows = cacheIdeas.filter(idea => filterUser==='all' || idea.autor===uName);
+    const wrap = document.getElementById('ideaCardsD');
+    document.getElementById('ideaCardsDEmpty').hidden = !!rows.length;
+    document.getElementById('ideaDetailD').hidden = !rows.length;
+    wrap.innerHTML = rows.map(idea => `
+      <button class="ideac" data-id="${idea.id}"><div class="itext">"${idea.texto}"</div>
+        <div class="imeta">${avatarHtml({nombre:idea.autor||'—', avatar_color:(usuarios.find(u=>u.nombre===idea.autor)||{}).avatar_color})}<span>${idea.autor||'—'} · ${timeAgo(idea.creadoEn)}</span>
+          ${idea.convertidoTipo ? `<span class="iconv">→ ${idea.convertidoTipo==='checklist'?'Checklist':'Gantt'}</span>` : ''}</div></button>`).join('');
+    wrap.onclick = (e) => {
+      const b = e.target.closest('.ideac'); if(!b) return;
+      wrap.querySelectorAll('.ideac').forEach(x=>x.classList.toggle('on', x===b));
+      showIdeaDetailD(rows.find(x=>x.id===b.dataset.id));
+    };
+    if (rows.length) showIdeaDetailD(rows[0]);
+  }
+
+  function showIdeaDetailD(idea){
+    const d = document.getElementById('ideaDetailD');
+    d.hidden = false;
+    d.innerHTML = `<div class="dtitle">${idea.autor||'—'} · ${timeAgo(idea.creadoEn)}</div><div style="color:var(--text-dim)">"${idea.texto}"</div>
+      ${idea.convertidoTipo ? `<div class="drow" style="margin-top:8px"><span>Ya convertida</span><b>${idea.convertidoTipo==='checklist'?'Ítem de checklist':'Tarea del Gantt'}</b></div>` : ''}
+      <div class="idea-actions">
+        <button data-act="edit"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> Editar</button>
+        <button class="del" data-act="del"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Eliminar</button>
+        ${!idea.convertidoTipo ? `
+        <button data-act="conv-check">→ Ítem checklist</button>
+        <button data-act="conv-tarea">→ Tarea Gantt</button>` : ''}
+      </div>`;
+    d.querySelector('[data-act="edit"]').onclick = () => openIdeaModal(idea);
+    d.querySelector('[data-act="del"]').onclick = () => deleteIdeaConfirm(idea);
+    const convCheck = d.querySelector('[data-act="conv-check"]');
+    const convTarea = d.querySelector('[data-act="conv-tarea"]');
+    if (convCheck) convCheck.onclick = () => convertIdea(idea, 'checklist');
+    if (convTarea) convTarea.onclick = () => convertIdea(idea, 'tarea');
+  }
+
+  async function deleteIdeaConfirm(idea){
+    const ok = await BT.confirm({ title:'Eliminar idea', message:'¿Eliminar esta idea?', okText:'Eliminar', danger:true });
+    if (!ok) return;
+    try{ await BT.api('/api/proyectos/' + proyectoId + '/ideas/' + idea.id, { method:'DELETE' }); BT.toast('Idea eliminada'); loadAll(); }
+    catch(e){ BT.toast('Error: ' + e.message); }
+  }
+
+  function convertIdea(idea, tipo){
+    const dest = tipo === 'checklist'
+      ? '/proyecto/' + proyectoId + '/checklist?nuevoItem=' + encodeURIComponent(idea.texto) + '&ideaId=' + idea.id
+      : '/proyecto/' + proyectoId + '/gantt?nuevaTarea=' + encodeURIComponent(idea.texto) + '&ideaId=' + idea.id;
+    location.href = dest;
+  }
+
+  function timeAgo(iso){
+    const diff = (Date.now() - new Date(iso)) / 1000;
+    if (diff < 3600) return Math.max(1,Math.round(diff/60)) + ' min';
+    if (diff < 86400) return Math.round(diff/3600) + ' h';
+    return Math.round(diff/86400) + ' d';
+  }
+
+  // ---- Nueva tarea ----
+  document.getElementById('btnAddTask').addEventListener('click', () => {
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box">
+      <h3>Nueva tarea</h3>
+      <div class="formf">
+        <div><label>Nombre *</label><input id="tName" placeholder="Ej: Revisar convenios de pago"></div>
+        <div><label>Fase (opcional)</label><input id="tFase" placeholder="Ej: Diseño"></div>
+        <div style="display:flex;gap:10px"><div style="flex:1"><label>Inicio</label><input id="tStart" type="date"></div>
+          <div style="flex:1"><label>Vence *</label><input id="tEnd" type="date"></div></div>
+        <div><label>Asignar a</label><div class="checkrow" id="tAssign">${usuarios.map(u=>`<label><input type="checkbox" value="${u.id}" ${u.id===me.id?'checked':''}> ${u.nombre}</label>`).join('')}</div></div>
+      </div>
+      <div class="bt-actions" style="margin-top:16px"><button class="cancel">Cancelar</button><button class="primary ok">Crear</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.cancel').onclick = close;
+    wrap.querySelector('.ok').onclick = async () => {
+      const nombre = wrap.querySelector('#tName').value.trim();
+      const fechaFin = wrap.querySelector('#tEnd').value;
+      if (!nombre || !fechaFin) { BT.toast('Falta el nombre o la fecha de término'); return; }
+      const asignados = [...wrap.querySelectorAll('#tAssign input:checked')].map(i => i.value);
+      try{
+        await BT.api('/api/proyectos/' + proyectoId + '/tareas', { method:'POST', body: JSON.stringify({
+          nombre, fase: wrap.querySelector('#tFase').value.trim() || null,
+          fechaInicio: wrap.querySelector('#tStart').value || null, fechaFin, asignados
+        })});
+        close(); BT.toast('Tarea creada'); loadAll();
+      }catch(e){ BT.toast('Error: ' + e.message); }
+    };
+  });
+
+  // ---- Nueva / editar idea ----
+  function openIdeaModal(existing){
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box">
+      <h3>${existing ? 'Editar idea' : 'Nueva idea'}</h3>
+      <div class="formf"><textarea id="ideaText" placeholder="Escribe la idea o sugerencia…">${existing?existing.texto:''}</textarea></div>
+      <div class="bt-actions" style="margin-top:16px"><button class="cancel">Cancelar</button><button class="primary ok">${existing?'Guardar':'Guardar'}</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.cancel').onclick = close;
+    wrap.querySelector('.ok').onclick = async () => {
+      const texto = wrap.querySelector('#ideaText').value.trim();
+      if (!texto) { BT.toast('Escribe algo primero'); return; }
+      try{
+        if (existing) await BT.api('/api/proyectos/' + proyectoId + '/ideas/' + existing.id, { method:'PATCH', body: JSON.stringify({ texto }) });
+        else await BT.api('/api/proyectos/' + proyectoId + '/ideas', { method:'POST', body: JSON.stringify({ texto }) });
+        close(); BT.toast(existing?'Idea actualizada':'Idea guardada'); loadAll();
+      }catch(e){ BT.toast('Error: ' + e.message); }
+    };
+  }
+  document.getElementById('btnAddIdeaM').addEventListener('click', () => openIdeaModal());
+  document.getElementById('btnAddIdeaD').addEventListener('click', () => openIdeaModal());
+
+  // ---- Notificaciones ----
+  document.getElementById('btnBell').addEventListener('click', async () => {
+    const d = await BT.api('/api/notificaciones');
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box" style="max-width:400px">
+      <h3>Notificaciones</h3>
+      <div class="notif-list">${d.notificaciones.length ? d.notificaciones.map(n => `
+        <div class="notif-item">${n.mensaje}<div class="nmeta">${n.proyectoNombre||''} · ${timeAgo(n.creadoEn)}</div></div>
+      `).join('') : '<div class="empty-mini">Sin notificaciones todavía.</div>'}</div>
+      <div class="bt-actions" style="margin-top:14px"><button class="primary ok">Cerrar</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.ok').onclick = close;
+    await BT.api('/api/notificaciones/marcar-leidas', { method:'POST' });
+    document.getElementById('bellDot').classList.remove('on');
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>

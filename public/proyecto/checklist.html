@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Checklist — Bitácora Compartida</title>
+<meta name="theme-color" content="#0052ea">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<link rel="apple-touch-icon" href="/icons/icon.svg">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/css/base.css">
+<style>
+body{padding-bottom:100px}
+.appbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
+.appbar .back{color:var(--text-dim);font-size:20px;line-height:1;border:0;background:none;padding:2px}
+.appbar h2{font-size:14.5px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.appbar .who{display:flex;align-items:center;gap:10px}
+.bell{position:relative;border:0;background:none;color:var(--text);padding:4px}
+.bell .dot{position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid var(--surface);display:none}
+.bell .dot.on{display:block}
+.pagepad{padding:16px;max-width:1180px;margin:0 auto}
+.empty-mini{color:var(--text-dim);font-size:12.5px;padding:20px 2px;text-align:center}
+.section h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--text);font-weight:800;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.section h3 .addbtn{border:0;background:none;color:var(--accent);font-weight:700;font-size:16px;line-height:1;padding:0 4px}
+
+.ck-hero{border:2px solid var(--border);background:var(--surface);border-radius:14px;padding:14px;margin-bottom:16px;box-shadow:var(--shadow)}
+.ck-hero .chead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px}
+.ck-hero .chead b{font-family:'IBM Plex Mono',monospace;font-size:22px}
+.ck-hero .chead span{font-size:11px;color:var(--text-dim)}
+.ck-stack{height:10px;border-radius:99px;overflow:hidden;display:flex;background:var(--surface-2)}
+.ck-legend{display:flex;gap:14px;margin-top:9px;font-size:10.5px;color:var(--text-dim);flex-wrap:wrap}
+.ck-legend i{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:-1px}
+.ck-filters{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto}
+.ck-filters button{flex:none;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:99px}
+.ck-filters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ckcat{margin-bottom:14px;background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:12px 14px;box-shadow:var(--shadow)}
+.ckcat:last-child{margin-bottom:0}
+.ckcat .cktitle{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.ckcat .cktitle .ctname{font-size:12.5px;font-weight:700}
+.ckcat .cktitle .ctrack{flex:1;height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;display:flex}
+.ckcat .cktitle .cfrac{font-size:10.5px;font-family:'IBM Plex Mono',monospace;color:var(--text-dim);flex:none}
+.ckcat .cktitle .ccollapse{color:var(--text-dim);flex:none;transition:transform .15s}
+.ckcat.collapsed .cktitle .ccollapse{transform:rotate(-90deg)}
+.ckitems{padding-top:10px}
+.ckcat.collapsed .ckitems{display:none}
+.ckitem{border-bottom:1px solid var(--border);padding:10px 0}
+.ckitem:last-child{border-bottom:0}
+.ckitem .cktop{display:flex;align-items:flex-start;gap:11px;cursor:pointer}
+.cbox{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--border);flex:none;margin-top:1px;display:grid;place-items:center;color:#fff;background:none}
+.cbox.done{background:var(--ok);border-color:var(--ok)}
+.cbox.partial{border-color:var(--warn);background:var(--warn-bg)}
+.cbox.partial svg{stroke:var(--warn)}
+.ckitem .ctext{flex:1;min-width:0}
+.ckitem .ctext .cname{font-size:13px;font-weight:600;line-height:1.35}
+.ckitem .ctext .ctags{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.tag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--surface-2);color:var(--text-dim)}
+.tag.prio-alta{background:var(--danger-bg);color:var(--danger)}
+.tag.prio-media{background:var(--warn-bg);color:var(--warn)}
+.tag.prio-baja{background:var(--surface-2);color:var(--text-dim)}
+.tag.status-ok{background:var(--ok-bg);color:var(--ok)}
+.tag.status-warn{background:var(--warn-bg);color:var(--warn)}
+.tag.status-pending{background:var(--surface-2);color:var(--text-dim)}
+.ckev{display:none;font-size:11.5px;color:var(--text-dim);background:var(--surface-2);border-radius:9px;padding:9px 10px;margin-top:8px;line-height:1.4}
+.ckev-who{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.ckev-who .who-chip{display:flex;align-items:center;gap:6px;font-size:11.5px}
+.ckev-who .who-chip b{color:var(--text);font-weight:600}
+.ckitem.open .ckev{display:block}
+.ckev .ckev-actions{display:flex;gap:8px;margin-top:9px}
+.ckev .ckev-actions button{border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.ckev .ckev-actions button:hover{color:var(--text);border-color:var(--accent)}
+.ckev .ckev-actions button.del:hover{color:var(--danger);border-color:var(--danger)}
+.ckitem .chev{margin-left:auto;color:var(--text-dim);flex:none;transition:transform .15s;cursor:pointer}
+.ckitem.open .chev{transform:rotate(180deg)}
+.ckitem.flash,#ckTable tr.flash{animation:ckflash 1.8s ease}
+@keyframes ckflash{0%,15%{background:var(--accent-soft)}100%{background:transparent}}
+
+.ck-desktop{display:none}
+@media (min-width: 900px){
+  .ck-mobile{display:none}
+  .ck-desktop{display:block}
+}
+.ck-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi{border:2px solid var(--border);background:var(--surface);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+.kpi .klabel{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.kpi .kval{font-family:'IBM Plex Mono',monospace;font-size:26px;margin-top:6px}
+.ck-compare{border:2px solid var(--border);background:var(--surface);border-radius:14px;padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
+.ck-compare .cchead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.ck-compare h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text);font-weight:800;margin:0}
+.btn-add{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--accent);color:#fff;font-weight:800;font-size:11.5px;
+  padding:8px 14px;border-radius:9px;box-shadow:var(--shadow)}
+.btn-add:hover{filter:brightness(1.08)}
+.cc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px 10px}
+.cc-row{display:flex;align-items:center;gap:10px;border:2px solid transparent;border-radius:9px;padding:6px 8px;margin:0 -8px;
+  background:none;font-family:inherit;width:calc(100% + 16px);text-align:left;cursor:pointer;transition:background .12s,border-color .12s}
+.cc-row:hover{background:var(--surface-2)}
+.cc-row.on{border-color:var(--accent);background:var(--accent-soft)}
+.cc-row .ccname{width:170px;flex:none;font-size:12px;color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cc-row .cctrack{flex:1;height:14px;border-radius:5px;background:var(--surface-2);overflow:hidden;display:flex}
+.cc-row .ccfrac{width:34px;flex:none;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);font-weight:600}
+.cc-tip{position:fixed;z-index:999;max-width:220px;background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:10px 12px;
+  font-size:11px;color:var(--text);box-shadow:0 12px 24px -12px rgba(0,0,0,.5);opacity:0;pointer-events:none;transition:opacity .12s}
+.cc-tip.on{opacity:1}
+.cc-tip .cctname{font-weight:800;margin-bottom:5px;font-size:11.5px}
+.cc-tip .ccrow2{display:flex;justify-content:space-between;padding:1.5px 0}
+.cc-tip .ccrow2 b{font-weight:700}
+.ck-body{display:grid;grid-template-columns:230px 1fr;gap:16px;align-items:start}
+.ck-rail{border:2px solid var(--border);background:var(--surface);border-radius:14px;padding:8px;position:sticky;top:70px;box-shadow:var(--shadow)}
+.ck-rail button{width:100%;text-align:left;border:0;background:none;border-radius:10px;padding:9px 10px;margin-bottom:2px;display:block;color:var(--text);cursor:pointer}
+.ck-rail button:last-child{margin-bottom:0}
+.ck-rail button.on{background:var(--accent-soft)}
+.ck-rail button .rname{font-size:12px;font-weight:600;display:flex;justify-content:space-between;gap:6px}
+.ck-rail button .rname span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ck-rail button .rname span:last-child{font-family:'IBM Plex Mono',monospace;font-weight:400;color:var(--text-dim);flex:none}
+.ck-rail button .rtrack{height:5px;border-radius:99px;background:var(--surface-2);overflow:hidden;display:flex;margin-top:6px}
+.ck-tablewrap{border:2px solid var(--border);background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.ck-tablehead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap}
+.ck-tablehead h3{font-size:13px;font-weight:700}
+.searchwrap{flex:1;min-width:160px;position:relative}
+.searchwrap input{width:100%;border:1.5px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:9px;
+  padding:8px 12px 8px 32px;font-size:12px;font-family:inherit}
+.searchwrap input::placeholder{color:var(--text-dim)}
+.searchwrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-dim)}
+.groupswitch{display:flex;gap:3px;background:var(--surface-2);padding:3px;border-radius:9px;border:1.5px solid var(--border);flex:none}
+.groupswitch button{border:0;background:none;padding:7px 11px;border-radius:6px;font-size:11px;font-weight:800;color:var(--text-dim)}
+.groupswitch button.on{background:var(--accent);color:#fff}
+.cktable{width:100%;border-collapse:collapse}
+.cktable th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text);font-weight:800;padding:9px 14px;border-bottom:1.5px solid var(--border);background:var(--surface-2);white-space:nowrap}
+.cktable th.sortable{cursor:pointer;user-select:none}
+.cktable th.sortable:hover{color:var(--accent)}
+.cktable th .sarrow{display:inline-block;margin-left:2px;opacity:.35;font-size:9px}
+.cktable th.active .sarrow{opacity:1;color:var(--accent)}
+.ck-gantt{width:110px}
+.gtbadge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.gtbadge.linked{background:var(--ok-bg);color:var(--ok)}
+.gtbadge.none{color:var(--text-dim);border:1.5px dashed var(--border)}
+.cktable td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:top}
+.cktable tr:last-child td{border-bottom:0}
+.cktable .ck-c1{width:36px}
+.cktable .ck-num{width:32px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px}
+.cktable .ck-name{font-weight:600}
+.cktable .ck-ev{color:var(--text-dim);max-width:340px}
+.cktable .ck-actions-h,.cktable .ck-actions-cell{width:64px;text-align:right;white-space:nowrap}
+.ck-rowbtn{border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:7px;width:26px;height:26px;display:inline-grid;place-items:center;margin-left:4px}
+.ck-rowbtn:hover{color:var(--text);border-color:var(--accent)}
+.ck-rowbtn[data-act="del"]:hover{color:var(--danger);border-color:var(--danger)}
+.ck-empty{padding:30px 14px;text-align:center;color:var(--text-dim);font-size:12.5px}
+
+.fab{position:fixed;right:18px;bottom:18px;z-index:20}
+.fab button{background:var(--accent);color:#fff;border:0;border-radius:99px;padding:13px 20px;font-weight:700;font-size:13px;
+  display:flex;align-items:center;gap:7px;box-shadow:0 10px 24px -8px rgba(0,0,0,.4)}
+.formf{display:flex;flex-direction:column;gap:12px;text-align:left}
+.formf label{font-size:11.5px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px}
+.formf input,.formf select{width:100%;border:1.5px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:10px;padding:10px 11px;font-family:inherit;font-size:13px}
+.checkrow{display:flex;gap:14px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="appbar">
+  <a class="back" id="backLink" href="#">‹</a>
+  <h2 id="pTitle">Cargando…</h2>
+  <div class="who">
+    <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema"></button>
+    <button class="bell" id="btnBell"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="dot" id="bellDot"></span></button>
+    <div class="avatar" id="meAvatar">··</div>
+  </div>
+</div>
+<div class="subnav">
+  <a id="navDash">Dashboard</a>
+  <a id="navGantt">Gantt</a>
+  <a id="navCheck" class="on">Checklist</a>
+</div>
+
+<div class="pagepad ck-mobile">
+  <div class="ck-hero">
+    <div class="chead"><b id="heroFrac">0/0</b><span>implementado</span></div>
+    <div class="ck-stack" id="ckStack"></div>
+    <div class="ck-legend">
+      <span><i style="background:var(--ok)"></i>Implementado · <span id="legOk">0</span></span>
+      <span><i style="background:var(--warn)"></i>Parcial · <span id="legWarn">0</span></span>
+      <span><i style="background:var(--border)"></i>Pendiente · <span id="legPending">0</span></span>
+    </div>
+  </div>
+  <div class="ck-filters" id="ckFiltersM">
+    <button class="on" data-status="all">Todos</button>
+    <button data-status="implementado">Implementado</button>
+    <button data-status="parcial">Parcial</button>
+    <button data-status="pendiente">Pendiente</button>
+  </div>
+  <div class="section"><h3>Ítems <button class="addbtn" id="btnAddItemM">+</button></h3></div>
+  <div class="ck-filters" id="ckUserFiltersM">
+    <button class="on" data-user="all">Todos</button>
+  </div>
+  <div id="ckCatsM"></div>
+</div>
+
+<div class="pagepad ck-desktop">
+  <div class="ck-kpis">
+    <div class="kpi"><div class="klabel">Implementado</div><div class="kval" id="kpiOk" style="color:var(--ok)">0</div></div>
+    <div class="kpi"><div class="klabel">Parcial</div><div class="kval" id="kpiWarn" style="color:var(--warn)">0</div></div>
+    <div class="kpi"><div class="klabel">Pendiente</div><div class="kval" id="kpiPending" style="color:var(--danger)">0</div></div>
+    <div class="kpi"><div class="klabel">Total ítems</div><div class="kval" id="kpiTotal">0</div></div>
+  </div>
+  <div class="ck-compare">
+    <div class="cchead">
+      <h3 id="ccTitle">Cobertura por categoría</h3>
+      <button class="btn-add" id="btnAddItemD"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuevo ítem</button>
+    </div>
+    <div class="cc-grid" id="ccGrid"></div>
+  </div>
+  <div class="ck-body">
+    <div class="ck-rail" id="ckRail"></div>
+    <div class="ck-tablewrap">
+      <div class="ck-tablehead">
+        <h3 id="ckTableTitle">Todas las categorías</h3>
+        <div class="searchwrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="ckSearch" placeholder="Buscar ítem…">
+        </div>
+        <div class="groupswitch" id="groupSwitch">
+          <button class="on" data-g="categoria">Por categoría</button>
+          <button data-g="prioridad">Por prioridad</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="ck-filters" id="ckFiltersD" style="margin:0">
+            <button class="on" data-status="all">Todos</button>
+            <button data-status="implementado">Implementado</button>
+            <button data-status="parcial">Parcial</button>
+            <button data-status="pendiente">Pendiente</button>
+          </div>
+          <div class="ck-filters" id="ckUserFiltersD" style="margin:0">
+            <button class="on" data-user="all">Todos</button>
+          </div>
+        </div>
+      </div>
+      <table class="cktable" id="ckTable"><thead><tr>
+        <th class="ck-num">#</th><th class="ck-c1"></th>
+        <th class="sortable active" data-sort="nombre">Ítem <span class="sarrow">▲</span></th>
+        <th class="sortable" data-sort="prioridad">Prioridad <span class="sarrow">▲</span></th>
+        <th>Gantt</th><th>Evidencia</th><th class="ck-actions-h"></th>
+      </tr></thead><tbody></tbody></table>
+      <div class="ck-empty" id="ckEmpty" style="display:none">Sin ítems para este filtro.</div>
+    </div>
+  </div>
+</div>
+
+<div class="cc-tip" id="ccTip"></div>
+<div class="fab"><button id="btnAddItem">+ Nuevo ítem</button></div>
+
+<script src="/js/app.js"></script>
+<script>
+(function(){
+  const proyectoId = location.pathname.split('/').filter(Boolean)[1];
+  const highlightId = new URLSearchParams(location.search).get('item');
+  const nuevoItemText = new URLSearchParams(location.search).get('nuevoItem');
+  let fromIdeaId = new URLSearchParams(location.search).get('ideaId');
+  let me = null, items = [], usuarios = [], tareas = [];
+  let filterStatus = 'all', filterUser = 'all', railCat = 'all';
+  let groupBy = 'categoria', search = '', sortKey = null, sortDir = 1;
+  let collapsedCats = new Set();
+  const ESTADOS = ['pendiente','parcial','implementado'];
+  const STATUS_LABEL = { implementado:'Implementado', parcial:'Parcial', pendiente:'Pendiente' };
+  const PRIO_LABEL = { alta:'Alta', media:'Media', baja:'Baja' };
+  const PRIO_RANK = { alta:0, media:1, baja:2 };
+  function prioTagHtml(p){ return p ? `<span class="tag prio-${p}">${PRIO_LABEL[p]||p}</span>` : ''; }
+  const STATUS_COLOR = { implementado:'var(--ok)', parcial:'var(--warn)', pendiente:'var(--text-dim)' };
+
+  document.getElementById('backLink').href = '/proyecto/' + proyectoId;
+  document.getElementById('navDash').href = '/proyecto/' + proyectoId;
+  document.getElementById('navGantt').href = '/proyecto/' + proyectoId + '/gantt';
+
+  function checkboxHtml(estado){
+    if (estado === 'implementado') return '<div class="cbox done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>';
+    if (estado === 'parcial') return '<div class="cbox partial"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>';
+    return '<div class="cbox"></div>';
+  }
+  function nextEstado(e){ return ESTADOS[(ESTADOS.indexOf(e)+1) % ESTADOS.length]; }
+  function avatarHtml(u, size){
+    const s = size || 18;
+    return '<div class="avatar '+(u.avatar_color||'')+'" style="width:'+s+'px;height:'+s+'px;font-size:'+Math.round(s*0.44)+'px">'+u.nombre.slice(0,2).toUpperCase()+'</div>';
+  }
+
+  async function init(){
+    let meRes, proyectoRes, usuariosRes, tareasRes;
+    try{
+      [meRes, proyectoRes, usuariosRes, tareasRes] = await Promise.all([ BT.api('/api/auth/me'), BT.api('/api/proyectos/' + proyectoId), BT.api('/api/auth/usuarios'), BT.api('/api/proyectos/' + proyectoId + '/tareas') ]);
+    }catch(e){ location.href='/'; return; }
+    me = meRes.usuario;
+    usuarios = usuariosRes.usuarios;
+    tareas = tareasRes.tareas;
+    document.getElementById('meAvatar').textContent = me.nombre.slice(0,2).toUpperCase();
+    document.getElementById('meAvatar').className = 'avatar ' + me.avatar_color;
+    document.getElementById('pTitle').textContent = proyectoRes.proyecto.nombre;
+    document.title = 'Checklist — ' + proyectoRes.proyecto.nombre;
+
+    const userBtns = '<button class="on" data-user="all">Todos</button>' +
+      usuarios.map(u => `<button data-user="${u.id}">${u.nombre}</button>`).join('');
+    document.getElementById('ckUserFiltersM').innerHTML = userBtns;
+    document.getElementById('ckUserFiltersD').innerHTML = userBtns;
+    [document.getElementById('ckUserFiltersM'), document.getElementById('ckUserFiltersD')].forEach(bar => {
+      bar.addEventListener('click', (e) => {
+        const b = e.target.closest('button'); if(!b) return;
+        filterUser = b.dataset.user;
+        [document.getElementById('ckUserFiltersM'), document.getElementById('ckUserFiltersD')].forEach(x => {
+          x.querySelectorAll('button').forEach(y => y.classList.toggle('on', y.dataset.user===filterUser));
+        });
+        renderMobile(); renderDesktop();
+      });
+    });
+
+    refreshBell();
+    await load();
+  }
+  async function refreshBell(){
+    try{ const d = await BT.api('/api/notificaciones/no-leidas'); document.getElementById('bellDot').classList.toggle('on', d.count > 0); }catch(e){}
+  }
+
+  let firstLoad = true, highlightShown = false, newItemOpened = false;
+  async function load(){
+    const d = await BT.api('/api/proyectos/' + proyectoId + '/checklist');
+    items = d.items;
+    if (firstLoad) {
+      items.forEach(it => collapsedCats.add(it.categoria));
+      const target = highlightId && items.find(i => i.id === highlightId);
+      if (target) { collapsedCats.delete(target.categoria); railCat = target.categoria; }
+      firstLoad = false;
+    }
+    renderHero();
+    renderMobile();
+    renderDesktop();
+    if (highlightId && !highlightShown) { highlightShown = true; scrollToHighlight(); }
+    if (nuevoItemText && !newItemOpened) { newItemOpened = true; openItemModal(null, nuevoItemText); }
+  }
+
+  function showCcTip(el, name, ok, warn, pending, next){
+    const tip = document.getElementById('ccTip');
+    tip.innerHTML = `<div class="cctname">${name}</div>
+      <div class="ccrow2"><span>Implementado</span><b style="color:var(--ok)">${ok}</b></div>
+      <div class="ccrow2"><span>Parcial</span><b style="color:var(--warn)">${warn}</b></div>
+      <div class="ccrow2"><span>Pendiente</span><b>${pending}</b></div>
+      ${next ? `<div class="ccrow2" style="margin-top:5px;border-top:1px solid var(--border);padding-top:5px"><span>Siguiente</span><b>${next.nombre.length>26?next.nombre.slice(0,26)+'…':next.nombre}</b></div>` : ''}
+      <div style="margin-top:6px;color:var(--text-dim);font-style:italic">Click para filtrar la tabla</div>`;
+    tip.classList.add('on');
+    const r = el.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    let left = Math.max(8, Math.min(r.left, window.innerWidth - tipRect.width - 8));
+    let top = r.bottom + 8;
+    if (top + tipRect.height > window.innerHeight - 8) top = r.top - tipRect.height - 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function hideCcTip(){ document.getElementById('ccTip').classList.remove('on'); }
+
+  function scrollToHighlight(){
+    const mob = document.querySelector('.ckitem[data-id="' + highlightId + '"]');
+    if (mob) {
+      mob.classList.add('open');
+      mob.scrollIntoView({ behavior:'smooth', block:'center' });
+      mob.classList.add('flash');
+      setTimeout(() => mob.classList.remove('flash'), 1800);
+    }
+    const row = document.querySelector('#ckTable tr[data-id="' + highlightId + '"]');
+    if (row) {
+      row.classList.add('flash');
+      setTimeout(() => row.classList.remove('flash'), 1800);
+    }
+  }
+
+  function renderHero(){
+    const ok = items.filter(i=>i.estado==='implementado').length;
+    const warn = items.filter(i=>i.estado==='parcial').length;
+    const pending = items.filter(i=>i.estado==='pendiente').length;
+    const total = items.length;
+    document.getElementById('heroFrac').textContent = ok + '/' + total;
+    document.getElementById('legOk').textContent = ok;
+    document.getElementById('legWarn').textContent = warn;
+    document.getElementById('legPending').textContent = pending;
+    document.getElementById('ckStack').innerHTML = total ?
+      `<div style="width:${ok/total*100}%;background:var(--ok)"></div><div style="width:${warn/total*100}%;background:var(--warn)"></div><div style="width:${pending/total*100}%;background:var(--surface-2)"></div>` : '';
+    document.getElementById('kpiOk').textContent = ok;
+    document.getElementById('kpiWarn').textContent = warn;
+    document.getElementById('kpiPending').textContent = pending;
+    document.getElementById('kpiTotal').textContent = total;
+  }
+
+  function categorize(){
+    const cats = {};
+    items.forEach(it => { (cats[it.categoria] = cats[it.categoria] || []).push(it); });
+    return cats;
+  }
+
+  function groupKeyOf(it){ return groupBy === 'categoria' ? it.categoria : (PRIO_LABEL[it.prioridad] || 'Sin prioridad'); }
+  function groupizeDesktop(){
+    const g = {};
+    items.forEach(it => { const k = groupKeyOf(it); (g[k] = g[k] || []).push(it); });
+    return g;
+  }
+  function gruposLabel(){ return groupBy === 'categoria' ? 'categoría' : 'prioridad'; }
+
+  function itemRowHtml(it){
+    return `<div class="ckitem" data-id="${it.id}">
+      <div class="cktop">
+        <span class="cboxwrap">${checkboxHtml(it.estado)}</span>
+        <div class="ctext"><div class="cname">${it.nombre}</div>
+          ${it.prioridad?`<div class="ctags">${prioTagHtml(it.prioridad)}</div>`:''}</div>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="ckev">
+        <div class="ckev-who">${(it.asignados||[]).length ? (it.asignados||[]).map(u=>`<span class="who-chip">${avatarHtml(u,20)}<b>${u.nombre}</b></span>`).join('') : '<span style="opacity:.7">Sin asignar</span>'}</div>
+        ${it.evidencia || '<span style="opacity:.7">Sin notas todavía.</span>'}
+        <div class="ckev-actions">
+          <button class="edit" data-act="edit"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> Editar</button>
+          <button class="del" data-act="del"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderMobile(){
+    const cats = categorize();
+    const wrap = document.getElementById('ckCatsM');
+    const names = Object.keys(cats);
+    if (!names.length){ wrap.innerHTML = '<div class="empty-mini">Todavía no hay ítems. Agrega el primero con "+".</div>'; return; }
+    wrap.innerHTML = names.map(name => {
+      const list = cats[name].filter(it => (filterStatus==='all' || it.estado===filterStatus) && (filterUser==='all' || (it.asignados||[]).some(u=>u.id===filterUser)));
+      if (!list.length) return '';
+      const ok = cats[name].filter(i=>i.estado==='implementado').length, total = cats[name].length;
+      const collapsed = collapsedCats.has(name);
+      return `<div class="ckcat${collapsed?' collapsed':''}" data-cat="${name}">
+        <div class="cktitle"><span class="ctname">${name}</span><div class="ctrack"><div style="width:${ok/total*100}%;background:var(--ok)"></div></div><span class="cfrac">${ok}/${total}</span>
+          <svg class="ccollapse" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="ckitems">${list.map(itemRowHtml).join('')}</div>
+      </div>`;
+    }).join('') || '<div class="empty-mini">Sin ítems para este filtro.</div>';
+    wrap.querySelectorAll('.ckcat > .cktitle').forEach(t => t.addEventListener('click', () => {
+      const cat = t.parentElement;
+      const name = cat.dataset.cat;
+      if (collapsedCats.has(name)) collapsedCats.delete(name); else collapsedCats.add(name);
+      cat.classList.toggle('collapsed');
+    }));
+    bindItemEvents(wrap);
+  }
+
+  function ganttBadgeHtml(it){
+    const t = it.tareaId && tareas.find(x => x.id === it.tareaId);
+    if (t) return `<span class="gtbadge linked" title="${t.nombre.replace(/"/g,'&quot;')}"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Vinculado</span>`;
+    return `<span class="gtbadge none">Sin tarea</span>`;
+  }
+
+  function renderDesktop(){
+    document.getElementById('ccTitle').textContent = 'Cobertura por ' + gruposLabel();
+    const groups = groupizeDesktop();
+    const names = Object.keys(groups);
+    const ccGrid = document.getElementById('ccGrid');
+    ccGrid.innerHTML = names.map(name => {
+      const ok = groups[name].filter(i=>i.estado==='implementado').length;
+      const warn = groups[name].filter(i=>i.estado==='parcial').length;
+      const total = groups[name].length;
+      return `<button class="cc-row${railCat===name?' on':''}" data-cat="${name.replace(/"/g,'&quot;')}"><span class="ccname">${name}</span><div class="cctrack"><div style="width:${ok/total*100}%;background:var(--ok)"></div><div style="width:${warn/total*100}%;background:var(--warn)"></div></div><span class="ccfrac">${ok}/${total}</span></button>`;
+    }).join('') || '<div class="empty-mini">Todavía no hay ítems.</div>';
+    ccGrid.onclick = (e) => {
+      const b = e.target.closest('.cc-row'); if(!b) return;
+      railCat = railCat === b.dataset.cat ? 'all' : b.dataset.cat;
+      renderDesktop();
+    };
+    ccGrid.onmouseover = (e) => {
+      const b = e.target.closest('.cc-row'); if(!b) return;
+      const name = b.dataset.cat;
+      const ok = groups[name].filter(i=>i.estado==='implementado').length;
+      const warn = groups[name].filter(i=>i.estado==='parcial').length;
+      const total = groups[name].length;
+      const pending = total - ok - warn;
+      const next = groups[name].find(i => i.estado !== 'implementado');
+      showCcTip(b, name, ok, warn, pending, next);
+    };
+    ccGrid.onmouseout = (e) => { if (e.target.closest('.cc-row')) hideCcTip(); };
+
+    const rail = document.getElementById('ckRail');
+    const totalOk = items.filter(i=>i.estado==='implementado').length;
+    rail.innerHTML = `<button class="${railCat==='all'?'on':''}" data-cat="all"><div class="rname"><span>Todas · ${gruposLabel()}</span><span>${totalOk}/${items.length}</span></div></button>` +
+      names.map(name => {
+        const ok = groups[name].filter(i=>i.estado==='implementado').length, total = groups[name].length;
+        return `<button class="${railCat===name?'on':''}" data-cat="${name}"><div class="rname"><span>${name}</span><span>${ok}/${total}</span></div><div class="rtrack"><div style="width:${ok/total*100}%;background:var(--ok)"></div></div></button>`;
+      }).join('');
+    rail.onclick = (e) => { const b = e.target.closest('button'); if(!b) return; railCat = b.dataset.cat; renderDesktop(); };
+
+    document.getElementById('ckTableTitle').textContent = railCat === 'all' ? ('Todas las ' + (groupBy==='categoria'?'categorías':'prioridades')) : railCat;
+
+    const q = search.trim().toLowerCase();
+    let rows = items.filter(it =>
+      (railCat==='all'||groupKeyOf(it)===railCat) &&
+      (filterStatus==='all'||it.estado===filterStatus) &&
+      (filterUser==='all' || (it.asignados||[]).some(u=>u.id===filterUser)) &&
+      (!q || it.nombre.toLowerCase().includes(q))
+    );
+    if (sortKey) {
+      rows = rows.slice().sort((a,b) => {
+        if (sortKey === 'prioridad') {
+          const ar = a.prioridad ? PRIO_RANK[a.prioridad] : 99, br = b.prioridad ? PRIO_RANK[b.prioridad] : 99;
+          return (ar - br) * sortDir;
+        }
+        const av = (a[sortKey]||'').toString().toLowerCase(), bv = (b[sortKey]||'').toString().toLowerCase();
+        return av < bv ? -1*sortDir : av > bv ? 1*sortDir : 0;
+      });
+    }
+    const tbody = document.querySelector('#ckTable tbody');
+    document.getElementById('ckEmpty').style.display = rows.length ? 'none' : 'block';
+    document.getElementById('ckTable').style.display = rows.length ? '' : 'none';
+    tbody.innerHTML = rows.map((it,idx) => `<tr data-id="${it.id}">
+      <td class="ck-num">${idx+1}</td>
+      <td class="ck-c1"><span class="cboxwrap" style="cursor:pointer">${checkboxHtml(it.estado).replace('width:22px','width:18px').replace('height:22px','height:18px')}</span></td>
+      <td class="ck-name">${it.nombre}</td><td>${prioTagHtml(it.prioridad)}</td>
+      <td class="ck-gantt">${ganttBadgeHtml(it)}</td>
+      <td class="ck-ev">${it.evidencia||'—'}</td>
+      <td class="ck-actions-cell">
+        <button class="ck-rowbtn" data-act="edit" title="Editar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+        <button class="ck-rowbtn" data-act="del" title="Eliminar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+      </td></tr>`).join('');
+    tbody.querySelectorAll('.cboxwrap').forEach(el => el.addEventListener('click', (e) => {
+      const tr = e.target.closest('tr');
+      if (!tr) { console.warn('[checkbox] no se encontró la fila <tr>'); return; }
+      toggleEstado(tr.dataset.id);
+    }));
+    tbody.querySelectorAll('[data-act="edit"]').forEach(btn => btn.addEventListener('click', (e) => {
+      const tr = e.target.closest('tr'); openItemModal(items.find(i=>i.id===tr.dataset.id));
+    }));
+    tbody.querySelectorAll('[data-act="del"]').forEach(btn => btn.addEventListener('click', async (e) => {
+      const tr = e.target.closest('tr');
+      const it = items.find(i=>i.id===tr.dataset.id);
+      const ok = await BT.confirm({ title:'Eliminar ítem', message:'¿Eliminar "'+it.nombre+'" del checklist?', okText:'Eliminar', danger:true });
+      if (!ok) return;
+      try{ await BT.api('/api/proyectos/' + proyectoId + '/checklist/' + it.id, { method:'DELETE' }); BT.toast('Ítem eliminado'); load(); }
+      catch(err){ BT.toast('Error: ' + err.message); }
+    }));
+  }
+
+  function bindItemEvents(container){
+    container.querySelectorAll('.ckitem').forEach(el => {
+      const box = el.querySelector('.cboxwrap');
+      if (!box) { console.warn('[checkbox] no se encontró .cboxwrap en el ítem', el.dataset.id); }
+      else box.addEventListener('click', (e) => { e.stopPropagation(); toggleEstado(el.dataset.id); });
+      const chev = el.querySelector('.chev');
+      const text = el.querySelector('.ctext');
+      [chev, text].forEach(t => t && t.addEventListener('click', (e) => { e.stopPropagation(); el.classList.toggle('open'); }));
+      const editBtn = el.querySelector('[data-act="edit"]');
+      const delBtn = el.querySelector('[data-act="del"]');
+      if (editBtn) editBtn.addEventListener('click', (e) => { e.stopPropagation(); openItemModal(items.find(i=>i.id===el.dataset.id)); });
+      if (delBtn) delBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const it = items.find(i=>i.id===el.dataset.id);
+        const ok = await BT.confirm({ title:'Eliminar ítem', message:'¿Eliminar "'+it.nombre+'" del checklist?', okText:'Eliminar', danger:true });
+        if (!ok) return;
+        try{ await BT.api('/api/proyectos/' + proyectoId + '/checklist/' + it.id, { method:'DELETE' }); BT.toast('Ítem eliminado'); load(); }
+        catch(err){ BT.toast('Error: ' + err.message); }
+      });
+    });
+  }
+
+  async function toggleEstado(id){
+    try{
+      const it = items.find(i => i.id === id);
+      if (!it) { BT.toast('No se encontró el ítem (' + id + ')'); return; }
+      const next = nextEstado(it.estado);
+      await BT.api('/api/proyectos/' + proyectoId + '/checklist/' + id, { method:'PATCH', body: JSON.stringify({ estado: next }) });
+      it.estado = next;
+      renderHero(); renderMobile(); renderDesktop();
+    }catch(e){ console.error('[toggleEstado]', e); BT.toast('Error: ' + e.message); }
+  }
+
+  document.getElementById('ckSearch').addEventListener('input', (e) => { search = e.target.value; renderDesktop(); });
+
+  document.getElementById('groupSwitch').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if(!b) return;
+    groupBy = b.dataset.g;
+    railCat = 'all';
+    document.querySelectorAll('#groupSwitch button').forEach(x => x.classList.toggle('on', x===b));
+    renderDesktop();
+  });
+
+  document.querySelectorAll('#ckTable thead th.sortable').forEach(th => th.addEventListener('click', () => {
+    const key = th.dataset.sort;
+    if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+    document.querySelectorAll('#ckTable thead th.sortable').forEach(x => x.classList.remove('active'));
+    th.classList.add('active');
+    th.querySelector('.sarrow').textContent = sortDir === 1 ? '▲' : '▼';
+    renderDesktop();
+  }));
+
+  [document.getElementById('ckFiltersM'), document.getElementById('ckFiltersD')].forEach(bar => {
+    bar.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if(!b) return;
+      filterStatus = b.dataset.status;
+      [document.getElementById('ckFiltersM'), document.getElementById('ckFiltersD')].forEach(x => {
+        x.querySelectorAll('button').forEach(y => y.classList.toggle('on', y.dataset.status===filterStatus));
+      });
+      renderMobile(); renderDesktop();
+    });
+  });
+
+  function openItemModal(existing, prefillNombre){
+    const cats = [...new Set(items.map(i=>i.categoria))];
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box">
+      <h3>${existing ? 'Editar ítem' : 'Nuevo ítem de checklist'}</h3>
+      <div class="formf">
+        <div><label>Categoría *</label><input id="ciCat" list="ciCatList" placeholder="Ej: Finanzas y Rendición" value="${existing?existing.categoria.replace(/"/g,'&quot;'):''}"><datalist id="ciCatList">${cats.map(c=>`<option value="${c}">`).join('')}</datalist></div>
+        <div><label>Nombre *</label><input id="ciName" placeholder="Ej: Pago electrónico" value="${existing?existing.nombre.replace(/"/g,'&quot;'):(prefillNombre?prefillNombre.replace(/"/g,'&quot;'):'')}"></div>
+        <div class="row2"><div><label>Prioridad</label><select id="ciPrio">
+          <option value="" ${!existing||!existing.prioridad?'selected':''}>Sin definir</option>
+          <option value="alta" ${existing&&existing.prioridad==='alta'?'selected':''}>Alta</option>
+          <option value="media" ${existing&&existing.prioridad==='media'?'selected':''}>Media</option>
+          <option value="baja" ${existing&&existing.prioridad==='baja'?'selected':''}>Baja</option>
+        </select></div>
+          <div><label>Estado</label><select id="ciEstado">
+            <option value="pendiente" ${(!existing||existing.estado==='pendiente')?'selected':''}>Pendiente</option>
+            <option value="parcial" ${existing&&existing.estado==='parcial'?'selected':''}>Parcial</option>
+            <option value="implementado" ${existing&&existing.estado==='implementado'?'selected':''}>Implementado</option>
+          </select></div></div>
+        <div><label>Notas / evidencia (opcional)</label><textarea id="ciEv" rows="3" style="width:100%;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:10px;padding:10px 11px;font-family:inherit;font-size:13px;resize:vertical">${existing&&existing.evidencia?existing.evidencia:''}</textarea></div>
+        <div><label>Responsable</label><div class="checkrow" id="ciAssign">${usuarios.map(u=>`<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text)"><input type="checkbox" value="${u.id}" ${existing&&(existing.asignados||[]).some(a=>a.id===u.id)?'checked':''}> ${u.nombre}</label>`).join('')}</div></div>
+        <div><label>Tarea vinculada del Gantt (opcional)</label><select id="ciTarea">
+          <option value="">Sin vincular</option>
+          ${tareas.map(t=>`<option value="${t.id}" ${existing&&existing.tareaId===t.id?'selected':''}>${t.nombre.replace(/"/g,'&quot;')}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="bt-actions" style="margin-top:16px"><button class="cancel">Cancelar</button><button class="primary ok">${existing?'Guardar':'Crear'}</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.cancel').onclick = close;
+    wrap.querySelector('.ok').onclick = async () => {
+      const categoria = wrap.querySelector('#ciCat').value.trim();
+      const nombre = wrap.querySelector('#ciName').value.trim();
+      if (!categoria || !nombre){ BT.toast('Falta la categoría o el nombre'); return; }
+      const asignados = [...wrap.querySelectorAll('#ciAssign input:checked')].map(i => i.value);
+      const body = {
+        categoria, nombre, prioridad: wrap.querySelector('#ciPrio').value || null,
+        estado: wrap.querySelector('#ciEstado').value, evidencia: wrap.querySelector('#ciEv').value.trim() || null,
+        asignados, tareaId: wrap.querySelector('#ciTarea').value || null,
+      };
+      try{
+        if (existing) {
+          await BT.api('/api/proyectos/' + proyectoId + '/checklist/' + existing.id, { method:'PATCH', body: JSON.stringify(body) });
+        } else {
+          const d = await BT.api('/api/proyectos/' + proyectoId + '/checklist', { method:'POST', body: JSON.stringify(body) });
+          if (fromIdeaId) {
+            await BT.api('/api/proyectos/' + proyectoId + '/ideas/' + fromIdeaId, { method:'PATCH', body: JSON.stringify({ convertidoTipo:'checklist', convertidoId: d.item.id }) });
+            fromIdeaId = null;
+            history.replaceState(null, '', location.pathname);
+          }
+        }
+        close(); BT.toast(existing?'Ítem actualizado':'Ítem creado'); load();
+      }catch(e){ BT.toast('Error: ' + e.message); }
+    };
+  }
+  document.getElementById('btnAddItem').addEventListener('click', () => openItemModal());
+  document.getElementById('btnAddItemM').addEventListener('click', () => openItemModal());
+  document.getElementById('btnAddItemD').addEventListener('click', () => openItemModal());
+
+  document.getElementById('btnBell').addEventListener('click', async () => {
+    const d = await BT.api('/api/notificaciones');
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box" style="max-width:400px">
+      <h3>Notificaciones</h3>
+      <div style="max-height:340px;overflow-y:auto">${d.notificaciones.length ? d.notificaciones.map(n => `
+        <div style="padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px">${n.mensaje}<div style="font-size:10.5px;color:var(--text-dim);margin-top:3px">${n.proyectoNombre||''}</div></div>
+      `).join('') : '<div class="empty-mini">Sin notificaciones todavía.</div>'}</div>
+      <div class="bt-actions" style="margin-top:14px"><button class="primary ok">Cerrar</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.ok').onclick = close;
+    await BT.api('/api/notificaciones/marcar-leidas', { method:'POST' });
+    document.getElementById('bellDot').classList.remove('on');
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>

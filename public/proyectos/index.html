@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Proyectos — Bitácora Compartida</title>
+<meta name="theme-color" content="#0052ea">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<link rel="apple-touch-icon" href="/icons/icon.svg">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/css/base.css">
+<style>
+.pg{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+.pghead{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.pghead h1{font-size:17px;font-weight:800;flex:1}
+.pghead .avatar{width:34px;height:34px}
+.pghead .logout{border:0;background:none;color:var(--text-dim);font-size:11.5px;text-decoration:underline}
+.projcard{display:flex;align-items:center;gap:14px;padding:15px;border:1px solid var(--border);border-radius:16px;background:var(--surface);margin-bottom:12px;text-align:left;width:100%;
+  text-decoration:none;transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;cursor:pointer}
+.projcard:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 14px 28px -16px rgba(0,0,0,.35)}
+.projcard:active{transform:translateY(0) scale(.99)}
+.projcard .pname{transition:color .15s ease}
+.projcard:hover .pname{color:var(--accent)}
+.projcard .arrow{margin-left:auto;color:var(--text-dim);flex:none;transition:transform .15s ease}
+.projcard:hover .arrow{transform:translateX(3px);color:var(--accent)}
+.projcard .ring{width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:10.5px;font-weight:700}
+.projcard .ring span{width:34px;height:34px;border-radius:50%;background:var(--surface);display:grid;place-items:center;font-size:10px}
+.projcard .pinfo{flex:1;min-width:0}
+.projcard .pinfo .pname{font-weight:700;font-size:14.5px}
+.projcard .pinfo .pmeta{font-size:11.5px;color:var(--text-dim);margin-top:2px}
+.newproj{border:1.5px dashed var(--border);border-radius:16px;padding:16px;text-align:center;color:var(--accent);font-weight:700;font-size:13.5px;background:none;width:100%}
+.empty{text-align:center;color:var(--text-dim);font-size:13px;padding:30px 0}
+.formf{margin-top:16px;display:flex;flex-direction:column;gap:12px;text-align:left}
+.formf label{font-size:11.5px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px}
+.formf input,.formf textarea{width:100%;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:10px;padding:10px 11px;font-family:inherit;font-size:13px}
+.formf textarea{resize:vertical;min-height:60px}
+</style>
+</head>
+<body>
+<div class="pg">
+  <div class="pghead">
+    <div class="avatar" id="meAvatar">··</div>
+    <h1>Tus proyectos</h1>
+    <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema"></button>
+    <button class="logout" id="btnLogout">Cerrar sesión</button>
+  </div>
+  <div id="list"></div>
+  <button class="newproj" id="btnNew">+ Agregar proyecto</button>
+</div>
+<script src="/js/app.js"></script>
+<script>
+(function(){
+  var list=document.getElementById('list');
+  var meAvatar=document.getElementById('meAvatar');
+
+  function ringStyle(pct){
+    return 'background:conic-gradient(var(--accent) '+pct+'%, var(--surface-2) 0)';
+  }
+
+  function render(proyectos){
+    if(!proyectos.length){ list.innerHTML='<div class="empty">Todavía no hay proyectos. Crea el primero abajo.</div>'; return; }
+    list.innerHTML=proyectos.map(function(p){
+      return '<a class="projcard" href="/proyecto/'+p.id+'">'+
+        '<div class="ring" style="'+ringStyle(p.checklistPct)+'"><span>'+p.checklistPct+'%</span></div>'+
+        '<div class="pinfo"><div class="pname">'+p.nombre+'</div>'+
+          '<div class="pmeta">'+p.totalTareas+' tareas'+(p.totalChecklist?(' · '+p.totalChecklist+' ítems de checklist'):'')+'</div></div>'+
+        '<svg class="arrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'+
+      '</a>';
+    }).join('');
+  }
+
+  async function load(){
+    try{
+      const me=await BT.api('/api/auth/me');
+      meAvatar.textContent=me.usuario.nombre.slice(0,2).toUpperCase();
+      meAvatar.className='avatar '+me.usuario.avatar_color;
+    }catch(e){ location.href='/'; return; }
+    try{
+      const d=await BT.api('/api/proyectos');
+      render(d.proyectos);
+    }catch(e){ BT.toast('No se pudieron cargar los proyectos'); }
+  }
+
+  document.getElementById('btnLogout').addEventListener('click', async function(){
+    const ok=await BT.confirm({title:'Cerrar sesión', message:'¿Seguro que quieres salir?', okText:'Cerrar sesión'});
+    if(!ok) return;
+    await BT.api('/api/auth/logout',{method:'POST'});
+    location.href='/';
+  });
+
+  document.getElementById('btnNew').addEventListener('click', function(){
+    const wrap=document.createElement('div');
+    wrap.className='bt-modal';
+    wrap.innerHTML='<div class="bt-backdrop"></div><div class="bt-box">'+
+      '<h3>Nuevo proyecto</h3>'+
+      '<div class="formf">'+
+        '<div><label>Nombre *</label><input id="npName" placeholder="Ej: Gastos Comunes"></div>'+
+        '<div><label>Descripción</label><textarea id="npDesc" placeholder="Opcional"></textarea></div>'+
+        '<div><label>Link de referencia</label><input id="npUrl" placeholder="https://… (opcional, solo para contexto)"></div>'+
+      '</div>'+
+      '<div class="bt-actions" style="margin-top:16px">'+
+        '<button class="cancel">Cancelar</button><button class="primary ok">Crear</button>'+
+      '</div></div>';
+    document.body.appendChild(wrap);
+    const close=()=>wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick=close;
+    wrap.querySelector('.cancel').onclick=close;
+    wrap.querySelector('.ok').onclick=async function(){
+      const nombre=wrap.querySelector('#npName').value.trim();
+      if(!nombre){ BT.toast('Falta el nombre'); return; }
+      try{
+        await BT.api('/api/proyectos',{method:'POST',body:JSON.stringify({
+          nombre, descripcion: wrap.querySelector('#npDesc').value.trim(),
+          referenciaUrl: wrap.querySelector('#npUrl').value.trim()
+        })});
+        close();
+        BT.toast('Proyecto creado');
+        load();
+      }catch(e){ BT.toast('Error: '+e.message); }
+    };
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

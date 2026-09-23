@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Gantt — Bitácora Compartida</title>
+<meta name="theme-color" content="#0052ea">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<link rel="apple-touch-icon" href="/icons/icon.svg">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/css/base.css">
+<style>
+body{padding-bottom:100px}
+.appbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
+.appbar .back{color:var(--text-dim);font-size:20px;line-height:1;border:0;background:none;padding:2px}
+.appbar h2{font-size:14.5px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.appbar .who{display:flex;align-items:center;gap:10px}
+.bell{position:relative;border:0;background:none;color:var(--text);padding:4px}
+.bell .dot{position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid var(--surface);display:none}
+.bell .dot.on{display:block}
+.pagepad{padding:16px;max-width:1180px;margin:0 auto}
+.empty-mini{color:var(--text-dim);font-size:12.5px;padding:20px 2px;text-align:center}
+
+.ck-filters button{flex:none;border:1px solid var(--border);background:var(--surface);color:var(--text-dim);font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:99px}
+.ck-filters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.gm-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px}
+.gm-head p{font-size:11.5px;color:var(--text-dim)}
+.icobtn{border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:9px;padding:7px 11px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.icobtn:hover{color:var(--text);border-color:var(--accent)}
+
+#frame.forcegrid .gm-list{display:none}
+#frame:not(.forcegrid) .gm-grid{display:none}
+.gphase{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin:16px 0 8px}
+.gphase:first-child{margin-top:0}
+.gtask{border:2px solid var(--border);border-radius:12px;padding:11px 12px;margin-bottom:8px;background:var(--surface);width:100%;text-align:left;color:var(--text);cursor:pointer;transition:border-color .15s, transform .1s;box-shadow:var(--shadow)}
+.gtask:hover{border-color:var(--accent)}
+.gtask:active{transform:scale(.99)}
+.gtask.done{opacity:.6}
+.gtask .gtop{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
+.gtask .gname{font-size:13px;font-weight:600}
+.gtask .gname.strike{text-decoration:line-through}
+.gtask .grange{font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:6px}
+.gtask .gbar-track{height:6px;background:var(--surface-2);border-radius:99px;position:relative;overflow:hidden}
+.gtask .gbar-fill{position:absolute;top:0;bottom:0;border-radius:99px;min-width:6px}
+.gtask .gwho{display:flex;gap:4px;margin-top:8px}
+
+.gdesk-wrap{border:2px solid var(--border);border-radius:14px;background:var(--surface);max-height:520px;overflow:auto;position:relative;box-shadow:var(--shadow)}
+.gdesk{width:max-content;position:relative}
+.gcolhl{position:absolute;top:0;background:var(--accent-soft);opacity:.55;pointer-events:none;z-index:0}
+.gcol{cursor:pointer}
+.grow{display:flex;border-bottom:1px solid var(--border)}
+.grow:last-child{border-bottom:0}
+.grow.phase{background:var(--surface-2)}
+.grow.phase .gleft{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);padding:5px 12px;background:var(--surface-2)}
+.gleft{width:270px;flex:none;padding:5px 12px;border-right:1px solid var(--border);display:flex;align-items:center;gap:8px;
+  position:sticky;left:0;background:var(--surface);z-index:1;transition:width .15s}
+.gl-main{flex:1;min-width:0;overflow:hidden}
+.gl-name{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px}
+.gl-name.strike{text-decoration:line-through;opacity:.6}
+.gl-meta{display:flex;align-items:center;gap:6px;min-width:0}
+.gl-owner{font-size:10px;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.estado-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;white-space:nowrap;flex:none}
+.estado-badge.completada{background:var(--ok-bg);color:var(--ok)}
+.estado-badge.en_progreso{background:var(--accent-soft);color:var(--accent-ink)}
+.estado-badge.pendiente{background:var(--surface-2);color:var(--text-dim);border:1px solid var(--border)}
+.gl-actions{display:flex;gap:2px;flex:none}
+.gl-actions button{border:0;background:none;color:var(--text-dim);padding:5px;border-radius:6px;display:grid;place-items:center}
+.gl-actions button:hover{background:var(--surface-2)}
+.gl-actions button.gl-edit:hover{color:var(--accent)}
+.gl-actions button.gl-del:hover{color:var(--danger)}
+/* modo contraído: solo el nombre, para darle más ancho visible a las barras */
+#gdeskWrap.collapsed .gleft{width:76px;padding:6px 8px}
+#gdeskWrap.collapsed .gl-meta,#gdeskWrap.collapsed .gl-actions{display:none}
+#gdeskWrap.collapsed .gl-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:0;cursor:pointer}
+#gdeskWrap.collapsed .grow.phase .gleft{width:76px}
+.gright{flex:none;position:relative;display:flex;align-items:center;min-height:34px}
+.gbar{position:absolute;height:26px;border-radius:7px;display:flex;align-items:center;gap:6px;padding:0 10px;font-size:11.5px;color:#fff;font-weight:700;white-space:nowrap;overflow:hidden;cursor:pointer;border:0;min-width:20px;z-index:1}
+.gbar-badge{flex:none;background:rgba(255,255,255,.28);border-radius:99px;padding:1px 7px;font-size:10px;font-weight:800;font-family:'IBM Plex Mono',monospace}
+.gbar.done{opacity:.55}
+.ghead{display:flex;background:var(--surface-2);font-size:9.5px;color:var(--text-dim);font-weight:700;position:sticky;top:0;z-index:2}
+.ghead .gleft{border-right:1px solid var(--border);display:flex;align-items:center;background:var(--surface-2);z-index:3}
+.ghead .gright{display:flex;min-height:auto;background-image:none}
+.ghead .gright .gcol{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:7px 0;border-right:1px solid var(--border)}
+.ghead .gright .gcol b{font-size:11px;font-weight:700;color:var(--text)}
+.ghead .gright .gcol small{font-size:8.5px;text-transform:uppercase;color:var(--text-dim)}
+
+.gs-row{display:flex;align-items:center;gap:18px;margin-bottom:10px;flex-wrap:wrap}
+.gs-stat{display:flex;flex-direction:column;gap:2px}
+.gs-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);font-weight:700}
+.gs-val{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600}
+.gs-sep{width:1px;height:26px;background:var(--border)}
+.gs-legend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:11px;color:var(--text-dim);padding-top:9px;border-top:1px solid var(--border)}
+.gs-leg-item{display:flex;align-items:center;gap:5px}
+.gs-leg-item i{width:8px;height:8px;border-radius:50%;display:inline-block;flex:none}
+
+/* tooltip flotante: vive fuera de .gdesk-wrap para no quedar recortado por su
+   scroll (la fila superior lo cortaba, ver misma solución en gantt.html) */
+.gtip-float{position:fixed;z-index:999;width:220px;background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:9px 10px;
+  font-size:10.5px;color:var(--text);box-shadow:0 12px 24px -12px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .12s;text-align:left}
+.gtip-float.on{opacity:1}
+.gtip-float .gtname{font-weight:700;margin-bottom:4px;font-size:11.5px}
+.gtip-float .grow2{display:flex;justify-content:space-between;color:var(--text-dim);padding:1px 0}
+.gtip-float .grow2 b{color:var(--text);font-weight:600}
+.gtip-ck{margin-top:7px;border-top:1px solid var(--border);padding-top:7px}
+.gtip-ck-head{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:800;color:var(--text-dim);margin-bottom:4px}
+.gtip-ck-item{display:flex;align-items:center;gap:6px;padding:1.5px 0;color:var(--text);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gtip-ck-item i{width:6px;height:6px;border-radius:50%;flex:none}
+
+.fab{position:fixed;right:18px;bottom:18px;z-index:20}
+.fab button{background:var(--accent);color:#fff;border:0;border-radius:99px;padding:13px 20px;font-weight:700;font-size:13px;
+  display:flex;align-items:center;gap:7px;box-shadow:0 10px 24px -8px rgba(0,0,0,.4)}
+
+.formf{display:flex;flex-direction:column;gap:12px;text-align:left}
+.formf label{font-size:11.5px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px}
+.formf input,.formf textarea,.formf select{width:100%;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:10px;padding:10px 11px;font-family:inherit;font-size:13px}
+.checkrow{display:flex;gap:14px}
+.checkrow label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text)}
+.row2{display:flex;gap:10px}
+.row2>div{flex:1}
+.bt-actions.spread{justify-content:space-between}
+.modebar{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface-2);padding:3px;border-radius:10px}
+.modebar button{border:0;background:none;padding:8px;border-radius:8px;font-size:11.5px;font-weight:700;color:var(--text-dim)}
+.modebar button.on{background:var(--surface);color:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.summary-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.summary-head h3{font-size:15px;font-weight:700}
+.summary-edit{border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);border-radius:9px;width:32px;height:32px;display:grid;place-items:center;flex:none}
+.summary-edit:hover{color:var(--accent);border-color:var(--accent)}
+.summary-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px}
+.summary-row:last-child{border-bottom:0}
+.summary-row span{color:var(--text-dim)}
+.summary-row b{color:var(--text);font-weight:600;text-align:right}
+
+/* ---- selector de estilo de lista ---- */
+.gm-switch{display:flex;gap:4px;background:var(--surface-2);padding:3px;border-radius:10px}
+.gm-switch button{border:0;background:none;color:var(--text-dim);font-size:11px;font-weight:700;padding:7px 9px;border-radius:8px;display:flex;align-items:center;gap:5px}
+.gm-switch button.on{background:var(--surface);color:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+/* ---- A: línea de tiempo ---- */
+.tl{position:relative;padding-left:22px}
+.tl::before{content:'';position:absolute;left:6px;top:6px;bottom:6px;width:2px;background:var(--border)}
+.tl-item{position:relative;padding-bottom:14px}
+.tl-item:last-child{padding-bottom:0}
+.tl-dot{position:absolute;left:-22px;top:3px;width:13px;height:13px;border-radius:50%;background:var(--surface);border:2.5px solid var(--accent)}
+.tl-dot.done{background:var(--ok);border-color:var(--ok)}
+.tl-dot.danger{border-color:var(--danger)}
+.tl-date{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-bottom:3px}
+.tl-card{background:var(--surface-2);border-radius:12px;padding:10px 12px;width:100%;text-align:left;border:0;color:var(--text);cursor:pointer}
+.tl-name{font-size:13px;font-weight:600;margin-bottom:6px}
+.tl-name.strike{text-decoration:line-through;opacity:.6}
+.tl-meta{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tl-who{display:flex;gap:4px}
+
+/* ---- B: agenda compacta ---- */
+.ag-group{margin-bottom:14px}
+.ag-group:last-child{margin-bottom:0}
+.ag-head{font-size:10.5px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.ag-head::after{content:'';flex:1;height:1px;background:var(--border)}
+.ag-row{display:flex;align-items:center;gap:10px;padding:8px 2px;border-bottom:1px solid var(--border);width:100%;text-align:left;border-left:0;border-right:0;border-top:0;background:none;color:var(--text);cursor:pointer}
+.ag-row:last-child{border-bottom:0}
+.ag-dot{width:9px;height:9px;border-radius:50%;flex:none}
+.ag-name{flex:1;font-size:12.5px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ag-name.strike{text-decoration:line-through;opacity:.6}
+.ag-day{font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;flex:none;width:30px;text-align:right}
+
+/* ---- C: mini-gantt reforzado ---- */
+.mg-card{border:2px solid var(--border);border-radius:14px;padding:12px 13px;margin-bottom:10px;width:100%;text-align:left;background:var(--surface);color:var(--text);cursor:pointer;box-shadow:var(--shadow)}
+.mg-card:last-child{margin-bottom:0}
+.mg-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:9px}
+.mg-name{font-size:13px;font-weight:600}
+.mg-name.strike{text-decoration:line-through;opacity:.6}
+.mg-track{position:relative;height:22px;background:var(--surface-2);border-radius:6px;margin-bottom:6px;overflow:hidden}
+.mg-fill{position:absolute;top:0;bottom:0;border-radius:6px;display:flex;align-items:center;padding:0 8px;font-size:9.5px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden}
+.mg-ticks{position:absolute;inset:0;display:flex}
+.mg-ticks span{flex:1;border-right:1px solid rgba(0,0,0,.06)}
+.mg-bottom{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--text-dim)}
+.mg-who{display:flex;gap:4px}
+</style>
+</head>
+<body>
+<div class="appbar">
+  <a class="back" id="backLink" href="#">‹</a>
+  <h2 id="pTitle">Cargando…</h2>
+  <div class="who">
+    <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema"></button>
+    <button class="bell" id="btnBell"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="dot" id="bellDot"></span></button>
+    <div class="avatar" id="meAvatar">··</div>
+  </div>
+</div>
+<div class="subnav">
+  <a id="navDash">Dashboard</a>
+  <a id="navGantt" class="on">Gantt</a>
+  <a id="navCheck">Checklist</a>
+</div>
+
+<div class="pagepad" id="frame">
+  <div class="section-card">
+    <div class="gs-row">
+      <div class="gs-stat"><span class="gs-label">Total tareas</span><span class="gs-val" id="gsTotal">0</span></div>
+      <div class="gs-sep"></div>
+      <div class="gs-stat"><span class="gs-label">Duración total</span><span class="gs-val" id="gsDuration">0 días</span></div>
+    </div>
+    <div class="gs-legend">
+      <span>Pasa el cursor sobre una barra para ver el detalle.</span>
+      <span class="gs-leg-item"><i style="background:var(--ok)"></i>Completada</span>
+      <span class="gs-leg-item"><i style="background:var(--accent)"></i>En progreso</span>
+      <span class="gs-leg-item"><i style="background:var(--text-dim)"></i>Pendiente</span>
+    </div>
+  </div>
+
+  <div class="ck-filters" id="userFilters" style="display:flex;gap:6px;margin-bottom:14px;overflow-x:auto">
+    <button class="on" data-user="all">Todos</button>
+  </div>
+  <div class="section-card gm-list">
+    <div class="gm-head"><p id="gmCount">0 tareas</p>
+      <button class="icobtn" id="btnForceGrid"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="9" y1="10" x2="9" y2="20"/></svg> Ver cuadrícula completa</button>
+    </div>
+    <div class="gm-switch" id="gmSwitch" style="margin-bottom:14px">
+      <button data-style="timeline">Línea de tiempo</button>
+      <button data-style="agenda">Agenda</button>
+      <button data-style="minigantt">Mini-Gantt</button>
+    </div>
+    <div id="gmListBody"></div>
+  </div>
+
+  <div class="section-card gm-grid">
+    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
+      <button class="icobtn" id="btnBackList"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg> Ver lista</button>
+      <button class="icobtn" id="btnCollapseNames"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg> Contraer nombres</button>
+      <select id="faseFilter" class="icobtn" style="margin-left:auto;font-family:inherit;cursor:pointer">
+        <option value="all">Todas las fases</option>
+      </select>
+    </div>
+    <div class="gdesk-wrap" id="gdeskWrap"></div>
+  </div>
+</div>
+
+<div class="gtip-float" id="ganttTip"></div>
+<div class="fab"><button id="btnAddTask">+ Nueva tarea</button></div>
+
+<script src="/js/app.js"></script>
+<script>
+(function(){
+  const proyectoId = location.pathname.split('/').filter(Boolean)[1];
+  const nuevaTareaText = new URLSearchParams(location.search).get('nuevaTarea');
+  let fromIdeaId = new URLSearchParams(location.search).get('ideaId');
+  let newTaskOpened = false;
+  let usuarios = [], me = null, tareas = [], allTareas = [], filterUser = 'all', filterFase = 'all';
+  document.getElementById('backLink').href = '/proyecto/' + proyectoId;
+  document.getElementById('navDash').href = '/proyecto/' + proyectoId;
+  document.getElementById('navCheck').href = '/proyecto/' + proyectoId + '/checklist';
+
+  function avatarHtml(u, size){
+    const s = size || 16;
+    return '<div class="avatar '+(u.avatar_color||'')+'" style="width:'+s+'px;height:'+s+'px;font-size:'+Math.round(s*0.44)+'px">'+u.nombre.slice(0,2).toUpperCase()+'</div>';
+  }
+  function parseD(s){ return new Date(s + 'T00:00:00'); }
+  function daysBetween(a,b){ return Math.round((b - a) / 86400000); }
+  function fmt(s){ if(!s) return ''; const [y,m,d]=s.split('-'); return d+'/'+m; }
+  function fmtISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function addDays(d, n){ const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+
+  function statusInfo(t){
+    if (t.estado === 'completada') return { color:'var(--ok)', label:'Completada' };
+    const today = new Date(); today.setHours(0,0,0,0);
+    const end = parseD(t.fechaFin);
+    const diff = daysBetween(today, end);
+    if (diff < 0) return { color:'var(--danger)', label: diff===-1?'Vencida hace 1 día':('Vencida hace '+(-diff)+' días') };
+    if (diff === 0) return { color:'var(--warn)', label:'Vence hoy' };
+    if (diff <= 3) return { color:'var(--warn)', label:'Vence en '+diff+' días' };
+    return { color:'var(--accent)', label:'Vence en '+diff+' días' };
+  }
+
+  const GRID_COLW = 40;
+
+  // Rango de fechas compartido entre la lista móvil y la grilla, para que la
+  // barra de cada tarjeta refleje su posición real dentro del proyecto.
+  function computeRange(){
+    let minDate = null, maxDate = null;
+    tareas.forEach(t => {
+      const s = parseD(t.fechaInicio || t.fechaFin), e = parseD(t.fechaFin);
+      if (!minDate || s < minDate) minDate = s;
+      if (!maxDate || e > maxDate) maxDate = e;
+    });
+    if (!minDate) { minDate = new Date(); maxDate = new Date(); }
+    const totalDays = daysBetween(minDate, maxDate) + 1;
+    return { minDate, totalDays: Math.max(totalDays, 1) };
+  }
+  function taskPos(t, range){
+    const s = parseD(t.fechaInicio || t.fechaFin);
+    const startCol = daysBetween(range.minDate, s);
+    const dur = daysBetween(s, parseD(t.fechaFin)) + 1;
+    return { left: startCol/range.totalDays*100, width: Math.max(dur/range.totalDays*100, 3), dur };
+  }
+
+  async function init(){
+    let meRes, usuariosRes, proyectoRes;
+    try{
+      [meRes, usuariosRes, proyectoRes] = await Promise.all([
+        BT.api('/api/auth/me'),
+        BT.api('/api/auth/usuarios'),
+        BT.api('/api/proyectos/' + proyectoId),
+      ]);
+    }catch(e){ location.href = '/'; return; }
+    me = meRes.usuario; usuarios = usuariosRes.usuarios;
+    document.getElementById('meAvatar').textContent = me.nombre.slice(0,2).toUpperCase();
+    document.getElementById('meAvatar').className = 'avatar ' + me.avatar_color;
+    document.getElementById('pTitle').textContent = proyectoRes.proyecto.nombre;
+    document.title = 'Gantt — ' + proyectoRes.proyecto.nombre;
+
+    if (window.matchMedia('(min-width: 900px)').matches) {
+      document.getElementById('frame').classList.add('forcegrid');
+    }
+
+    const filterBar = document.getElementById('userFilters');
+    filterBar.insertAdjacentHTML('beforeend', usuarios.map(u => `<button data-user="${u.id}">${u.nombre}</button>`).join(''));
+    filterBar.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      filterUser = b.dataset.user;
+      filterBar.querySelectorAll('button').forEach(x => x.classList.toggle('on', x===b));
+      applyFilter();
+    });
+
+    refreshBell();
+    await load();
+  }
+
+  const ESTADO_LABEL = { completada:'Completada', en_progreso:'En progreso', pendiente:'Pendiente' };
+
+  function applyFilter(){
+    tareas = allTareas.filter(t =>
+      (filterUser === 'all' || (t.asignados||[]).some(a => a.id === filterUser)) &&
+      (filterFase === 'all' || (t.fase || 'Sin fase') === filterFase)
+    );
+    document.getElementById('gmCount').textContent = tareas.length + (tareas.length===1?' tarea':' tareas');
+    document.getElementById('gsTotal').textContent = tareas.length;
+    document.getElementById('gsDuration').textContent = tareas.length ? computeRange().totalDays + ' días' : '0 días';
+    renderList();
+    renderGrid();
+  }
+
+  async function refreshBell(){
+    try{ const d = await BT.api('/api/notificaciones/no-leidas'); document.getElementById('bellDot').classList.toggle('on', d.count > 0); }catch(e){}
+  }
+
+  let itemsByTarea = {};
+  async function load(){
+    const [d, ck] = await Promise.all([
+      BT.api('/api/proyectos/' + proyectoId + '/tareas'),
+      BT.api('/api/proyectos/' + proyectoId + '/checklist'),
+    ]);
+    allTareas = d.tareas.slice().sort((a,b) => parseD(a.fechaInicio||a.fechaFin) - parseD(b.fechaInicio||b.fechaFin));
+    itemsByTarea = {};
+    ck.items.forEach(it => { if (it.tareaId) (itemsByTarea[it.tareaId] = itemsByTarea[it.tareaId] || []).push(it); });
+    const fases = [...new Set(allTareas.map(t => t.fase || 'Sin fase'))];
+    const faseSel = document.getElementById('faseFilter');
+    const prev = faseSel.value;
+    faseSel.innerHTML = '<option value="all">Todas las fases</option>' + fases.map(f => `<option value="${f.replace(/"/g,'&quot;')}">${f}</option>`).join('');
+    faseSel.value = fases.includes(prev) ? prev : 'all';
+    filterFase = faseSel.value;
+    applyFilter();
+    if (nuevaTareaText && !newTaskOpened) { newTaskOpened = true; openTaskModal(null, nuevaTareaText); }
+  }
+
+  let listStyle = 'timeline';
+  try{ listStyle = localStorage.getItem('bitacora-gantt-list-style') || 'timeline'; }catch(e){}
+
+  function shortDays(t){
+    if (t.estado === 'completada') return '✓';
+    const today = new Date(); today.setHours(0,0,0,0);
+    const diff = daysBetween(today, parseD(t.fechaFin));
+    if (diff === 0) return 'Hoy';
+    return diff + 'd';
+  }
+
+  function renderList(){
+    const body = document.getElementById('gmListBody');
+    if (!tareas.length){ body.innerHTML = '<div class="empty-mini">Todavía no hay tareas. Crea la primera con "+ Nueva tarea".</div>'; return; }
+    if (listStyle === 'agenda') renderListAgenda(body);
+    else if (listStyle === 'minigantt') renderListMiniGantt(body);
+    else renderListTimeline(body);
+  }
+
+  // ---- A: línea de tiempo vertical ----
+  function renderListTimeline(body){
+    let lastFase; let html = '<div class="tl">';
+    tareas.forEach((t,i) => {
+      if (t.fase !== lastFase){ html += '<div class="gphase">'+(t.fase||'Sin fase')+'</div>'; lastFase = t.fase; }
+      const st = statusInfo(t);
+      const dotClass = t.estado==='completada' ? 'done' : (st.label.indexOf('Vencida')===0 ? 'danger' : '');
+      const rangeTxt = t.fechaInicio ? (fmt(t.fechaInicio)+' — '+fmt(t.fechaFin)) : ('vence '+fmt(t.fechaFin));
+      html += `<div class="tl-item"><div class="tl-dot ${dotClass}"></div>
+        <div class="tl-date">${rangeTxt}</div>
+        <button class="tl-card" data-i="${i}">
+          <div class="tl-name${t.estado==='completada'?' strike':''}">${t.nombre}</div>
+          <div class="tl-meta"><span class="pill" style="background:${st.color}22;color:${st.color};border:1px solid ${st.color}55">${t.estado==='completada'?'Completada':st.label}</span>
+            <div class="tl-who">${(t.asignados||[]).map(u=>avatarHtml(u,20)).join('')}</div></div>
+        </button>
+      </div>`;
+    });
+    html += '</div>';
+    body.innerHTML = html;
+    body.onclick = (e) => { const b = e.target.closest('.tl-card'); if(!b) return; openTaskSummary(tareas[+b.dataset.i]); };
+  }
+
+  // ---- B: agenda agrupada por cercanía de vencimiento ----
+  function renderListAgenda(body){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const buckets = [ ['Vencidas', []], ['Esta semana', []], ['Próxima semana', []], ['Más adelante', []] ];
+    tareas.forEach((t,i) => {
+      const diff = daysBetween(today, parseD(t.fechaFin));
+      const idx = diff < 0 ? 0 : diff <= 6 ? 1 : diff <= 13 ? 2 : 3;
+      buckets[idx][1].push(i);
+    });
+    let html = '';
+    buckets.forEach(([label, idxs]) => {
+      if (!idxs.length) return;
+      html += `<div class="ag-group"><div class="ag-head">${label}</div>`;
+      idxs.forEach(i => {
+        const t = tareas[i];
+        const st = statusInfo(t);
+        const dotColor = t.estado==='completada' ? 'var(--ok)' : st.color;
+        html += `<button class="ag-row" data-i="${i}">
+          <span class="ag-dot" style="background:${dotColor}"></span>
+          <span class="ag-name${t.estado==='completada'?' strike':''}">${t.nombre}</span>
+          <div class="tl-who">${(t.asignados||[]).slice(0,2).map(u=>avatarHtml(u,18)).join('')}</div>
+          <span class="ag-day">${shortDays(t)}</span>
+        </button>`;
+      });
+      html += '</div>';
+    });
+    body.innerHTML = html || '<div class="empty-mini">Sin tareas.</div>';
+    body.onclick = (e) => { const b = e.target.closest('.ag-row'); if(!b) return; openTaskSummary(tareas[+b.dataset.i]); };
+  }
+
+  // ---- C: mini-gantt reforzado por tarjeta ----
+  function renderListMiniGantt(body){
+    const range = computeRange();
+    let lastFase; let html = '';
+    tareas.forEach((t,i) => {
+      if (t.fase !== lastFase){ html += '<div class="gphase">'+(t.fase||'Sin fase')+'</div>'; lastFase = t.fase; }
+      const st = statusInfo(t);
+      const pos = taskPos(t, range);
+      const fillColor = t.estado==='completada' ? 'var(--ok)' : st.color;
+      const rangeTxt = t.fechaInicio ? (fmt(t.fechaInicio)+'–'+fmt(t.fechaFin)) : fmt(t.fechaFin);
+      html += `<button class="mg-card" data-i="${i}">
+        <div class="mg-top"><span class="mg-name${t.estado==='completada'?' strike':''}">${t.nombre}</span>
+          <span class="pill" style="background:${st.color}22;color:${st.color};border:1px solid ${st.color}55">${t.estado==='completada'?'Completada':st.label}</span></div>
+        <div class="mg-track"><div class="mg-ticks"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="mg-fill" style="left:${pos.left}%;width:${pos.width}%;background:${fillColor}">${rangeTxt}</div></div>
+        <div class="mg-bottom"><span>${pos.dur} día${pos.dur===1?'':'s'}</span><div class="mg-who">${(t.asignados||[]).map(u=>avatarHtml(u,18)).join('')}</div></div>
+      </button>`;
+    });
+    body.innerHTML = html;
+    body.onclick = (e) => { const b = e.target.closest('.mg-card'); if(!b) return; openTaskSummary(tareas[+b.dataset.i]); };
+  }
+
+  let gridRange = null;
+  function renderGrid(){
+    const wrap = document.getElementById('gdeskWrap');
+    if (!tareas.length){ wrap.innerHTML = '<div class="empty-mini">Todavía no hay tareas.</div>'; return; }
+    const range = computeRange();
+    gridRange = range;
+    const colWidth = GRID_COLW;
+    const totalWidth = range.totalDays * colWidth;
+    const cols = [];
+    for (let i=0;i<range.totalDays;i++){
+      const d = new Date(range.minDate); d.setDate(d.getDate()+i);
+      cols.push({ label: d.getDate()+'/'+(d.getMonth()+1), sub: d.toLocaleDateString('es-ES',{weekday:'narrow'}) });
+    }
+
+    let rows = '';
+    tareas.forEach((t,i) => {
+      const pos = taskPos(t, range);
+      rows += `<div class="grow">
+        <div class="gleft">
+          <div class="gl-main">
+            <div class="gl-name${t.estado==='completada'?' strike':''}" data-i="${i}" title="${t.nombre.replace(/"/g,'&quot;')}">${t.nombre}</div>
+            <div class="gl-meta"><span class="estado-badge ${t.estado}">${ESTADO_LABEL[t.estado]}</span>
+              <span class="gl-owner">${(t.asignados||[]).map(u=>u.nombre).join(', ')||'Sin asignar'}</span></div>
+          </div>
+          <div class="gl-actions">
+            <button class="gl-edit" data-i="${i}" title="Editar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+            <button class="gl-del" data-i="${i}" title="Eliminar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+          </div>
+        </div>
+        <div class="gright" style="width:${totalWidth}px"><div class="gbar${t.estado==='completada'?' done':''}" data-i="${i}" style="left:${pos.left}%;width:${pos.width}%;background:${t.color}">
+          ${t.nombre}${(itemsByTarea[t.id]||[]).length ? `<span class="gbar-badge">${itemsByTarea[t.id].length}</span>` : ''}
+        </div></div>
+      </div>`;
+    });
+
+    wrap.innerHTML = `<div class="gdesk">
+      <div class="ghead"><div class="gleft">Tarea</div><div class="gright" style="width:${totalWidth}px">${cols.map((c,idx)=>`<span class="gcol" data-day="${idx}" style="width:${colWidth}px"><b>${c.label}</b><small>${c.sub}</small></span>`).join('')}</div></div>
+      ${rows}
+      <div class="gcolhl" id="gcolhl" hidden></div>
+    </div>`;
+    wrap.ondblclick = (e) => { const b = e.target.closest('.gbar'); if(!b) return; openTaskSummary(tareas[+b.dataset.i]); };
+    wrap.onclick = (e) => {
+      const edit = e.target.closest('.gl-edit');
+      const del = e.target.closest('.gl-del');
+      const name = e.target.closest('.gl-name');
+      const col = e.target.closest('.gcol');
+      if (edit) { openTaskModal(tareas[+edit.dataset.i]); return; }
+      if (del) { deleteTaskConfirm(tareas[+del.dataset.i]); return; }
+      if (name && wrap.classList.contains('collapsed')) { showNameTooltip(name, tareas[+name.dataset.i].nombre); return; }
+      if (col) { highlightGridDay(+col.dataset.day, colWidth); return; }
+    };
+    wrap.onmousemove = (e) => { const b = e.target.closest('.gbar'); if (b) showGridTooltip(b, tareas[+b.dataset.i]); else hideGridTooltip(); };
+    wrap.onmouseleave = hideGridTooltip;
+    wrap.onscroll = hideGridTooltip;
+  }
+
+  async function deleteTaskConfirm(t){
+    const ok = await BT.confirm({ title:'Eliminar tarea', message:'¿Seguro que quieres eliminar "'+t.nombre+'"?', okText:'Eliminar', danger:true });
+    if (!ok) return;
+    await BT.api('/api/proyectos/' + proyectoId + '/tareas/' + t.id, { method:'DELETE' });
+    BT.toast('Tarea eliminada'); load();
+  }
+
+  // Tooltip flotante: vive en document.body con position:fixed, así nunca lo
+  // corta el scroll de .gdesk-wrap (la fila de arriba quedaba tapada antes)
+  // y se voltea hacia abajo si no hay espacio arriba.
+  const CK_ESTADO_COLOR = { implementado:'var(--ok)', parcial:'var(--warn)', pendiente:'var(--text-dim)' };
+  function showGridTooltip(barEl, t){
+    const tip = document.getElementById('ganttTip');
+    const st = statusInfo(t);
+    const pos = taskPos(t, computeRange());
+    const linked = itemsByTarea[t.id] || [];
+    tip.innerHTML = `<div class="gtname">${t.nombre}</div>
+      <div class="grow2"><span>Inicio</span><b>${fmt(t.fechaInicio||t.fechaFin)}</b></div>
+      <div class="grow2"><span>Vence</span><b>${fmt(t.fechaFin)}</b></div>
+      <div class="grow2"><span>Duración</span><b>${pos.dur} día${pos.dur===1?'':'s'}</b></div>
+      <div class="grow2"><span>Responsable</span><b>${(t.asignados||[]).map(u=>u.nombre).join(', ')||'Sin asignar'}</b></div>
+      <div class="grow2"><span>Estado</span><b style="color:${st.color}">${t.estado==='completada'?'Completada':st.label}</b></div>
+      ${linked.length ? `<div class="gtip-ck">
+        <div class="gtip-ck-head">Checklist vinculado · ${linked.length}</div>
+        ${linked.slice(0,5).map(it => `<div class="gtip-ck-item"><i style="background:${CK_ESTADO_COLOR[it.estado]}"></i>${it.nombre}</div>`).join('')}
+        ${linked.length > 5 ? `<div class="gtip-ck-item" style="opacity:.7">+${linked.length-5} más…</div>` : ''}
+      </div>` : ''}
+      <div style="margin-top:6px;color:var(--text-dim);font-style:italic">Doble clic para ver detalle</div>`;
+    tip.classList.add('on');
+    const r = barEl.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    let left = r.left + r.width/2 - tipRect.width/2;
+    left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
+    let top = r.top - tipRect.height - 8;
+    if (top < 8) top = r.bottom + 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+  function hideGridTooltip(){ document.getElementById('ganttTip').classList.remove('on'); }
+
+  let nameTipTimer;
+  function showNameTooltip(el, text){
+    const tip = document.getElementById('ganttTip');
+    tip.innerHTML = `<div class="gtname" style="margin:0">${text}</div>`;
+    tip.classList.add('on');
+    const r = el.getBoundingClientRect();
+    const tipRect = tip.getBoundingClientRect();
+    let left = Math.max(8, Math.min(r.left, window.innerWidth - tipRect.width - 8));
+    let top = r.bottom + 8;
+    if (top + tipRect.height > window.innerHeight - 8) top = r.top - tipRect.height - 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+    clearTimeout(nameTipTimer);
+    nameTipTimer = setTimeout(hideGridTooltip, 2200);
+  }
+
+  const GRID_DAYNAMES = ['dom','lun','mar','mié','jue','vie','sáb'];
+  const GRID_MONTHNAMES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  function highlightGridDay(dayIdx, colWidth){
+    if (!gridRange) return;
+    const wrap = document.getElementById('gdeskWrap');
+    const gleftW = wrap.querySelector('.gleft').offsetWidth;
+    const hl = document.getElementById('gcolhl');
+    hl.hidden = false;
+    hl.style.left = (gleftW + dayIdx * colWidth) + 'px';
+    hl.style.width = colWidth + 'px';
+    hl.style.height = wrap.querySelector('.gdesk').scrollHeight + 'px';
+    const d = new Date(gridRange.minDate); d.setDate(d.getDate() + dayIdx);
+    const col = wrap.querySelectorAll('.gcol')[dayIdx];
+    if (col) showNameTooltip(col, GRID_DAYNAMES[d.getDay()] + ' ' + d.getDate() + ' ' + GRID_MONTHNAMES[d.getMonth()]);
+  }
+
+  document.getElementById('btnForceGrid').addEventListener('click', () => document.getElementById('frame').classList.add('forcegrid'));
+  document.getElementById('btnBackList').addEventListener('click', () => document.getElementById('frame').classList.remove('forcegrid'));
+
+  document.getElementById('faseFilter').addEventListener('change', (e) => {
+    filterFase = e.target.value;
+    applyFilter();
+  });
+
+  document.getElementById('btnCollapseNames').addEventListener('click', function(){
+    const wrap = document.getElementById('gdeskWrap');
+    const collapsed = wrap.classList.toggle('collapsed');
+    this.lastChild.textContent = collapsed ? ' Expandir nombres' : ' Contraer nombres';
+  });
+
+  const gmSwitch = document.getElementById('gmSwitch');
+  gmSwitch.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.style === listStyle));
+  gmSwitch.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    listStyle = b.dataset.style;
+    gmSwitch.querySelectorAll('button').forEach(x => x.classList.toggle('on', x===b));
+    try{ localStorage.setItem('bitacora-gantt-list-style', listStyle); }catch(err){}
+    renderList();
+  });
+
+  // ---- Modal de resumen (solo lectura) con lápiz para editar ----
+  function openTaskSummary(t){
+    const st = statusInfo(t);
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box">
+      <div class="summary-head"><h3>${t.nombre}</h3>
+        <button class="summary-edit" id="sEdit" title="Editar" aria-label="Editar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
+      </div>
+      <div class="summary-row"><span>Fase</span><b>${t.fase||'—'}</b></div>
+      <div class="summary-row"><span>Inicio</span><b>${fmt(t.fechaInicio||t.fechaFin)}</b></div>
+      <div class="summary-row"><span>Vence</span><b>${fmt(t.fechaFin)}</b></div>
+      <div class="summary-row"><span>Responsable</span><b>${(t.asignados||[]).map(u=>u.nombre).join(', ')||'Sin asignar'}</b></div>
+      <div class="summary-row"><span>Estado</span><b style="color:${st.color}">${t.estado==='completada'?'Completada':st.label}</b></div>
+      <div class="bt-actions" style="margin-top:16px"><button class="cancel">Cerrar</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.cancel').onclick = close;
+    wrap.querySelector('#sEdit').onclick = () => { close(); openTaskModal(t); };
+  }
+
+  // ---- Modal de crear/editar, con modo "por fechas" o "por días" ----
+  function openTaskModal(existing, prefillNombre){
+    let mode = existing ? 'fechas' : 'dias';
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box">
+      <h3>${existing ? 'Editar tarea' : 'Nueva tarea'}</h3>
+      <div class="formf">
+        <div><label>Nombre *</label><input id="tName" value="${existing?existing.nombre.replace(/"/g,'&quot;'):(prefillNombre?prefillNombre.replace(/"/g,'&quot;'):'')}"></div>
+        <div><label>Fase (opcional)</label><input id="tFase" list="tFaseList" value="${existing&&existing.fase?existing.fase.replace(/"/g,'&quot;'):''}">
+          <datalist id="tFaseList">${[...new Set(allTareas.map(t=>t.fase).filter(Boolean))].map(f=>`<option value="${f.replace(/"/g,'&quot;')}">`).join('')}</datalist></div>
+
+        <div><label>Programación</label>
+          <div class="modebar">
+            <button type="button" data-m="dias" class="${mode==='dias'?'on':''}">Por días</button>
+            <button type="button" data-m="fechas" class="${mode==='fechas'?'on':''}">Por fechas</button>
+          </div>
+        </div>
+        <div id="fDias" class="row2" style="${mode==='dias'?'':'display:none'}">
+          <div><label>Empieza en (días desde hoy)</label><input id="tOffset" type="number" min="0" value="0"></div>
+          <div><label>Duración (días)</label><input id="tDur" type="number" min="1" value="5"></div>
+        </div>
+        <div id="fFechas" class="row2" style="${mode==='fechas'?'':'display:none'}">
+          <div><label>Inicio</label><input id="tStart" type="date" value="${existing&&existing.fechaInicio||''}"></div>
+          <div><label>Vence *</label><input id="tEnd" type="date" value="${existing?existing.fechaFin:''}"></div>
+        </div>
+
+        <div class="row2"><div><label>Color</label><input id="tColor" type="color" value="${existing?existing.color:'#0052ea'}" style="padding:3px;height:38px"></div>
+          <div><label>Estado</label><select id="tEstado">
+            <option value="pendiente" ${existing&&existing.estado==='pendiente'?'selected':''}>Pendiente</option>
+            <option value="en_progreso" ${existing&&existing.estado==='en_progreso'?'selected':''}>En progreso</option>
+            <option value="completada" ${existing&&existing.estado==='completada'?'selected':''}>Completada</option>
+          </select></div></div>
+        <div><label>Asignar a</label><div class="checkrow" id="tAssign">${usuarios.map(u=>{
+          const checked = existing ? (existing.asignados||[]).some(a=>a.id===u.id) : u.id===me.id;
+          return `<label><input type="checkbox" value="${u.id}" ${checked?'checked':''}> ${u.nombre}</label>`;
+        }).join('')}</div></div>
+      </div>
+      <div class="bt-actions spread" style="margin-top:16px">
+        <span>${existing ? '<button class=\"danger\" id=\"tDelete\">Eliminar</button>' : ''}</span>
+        <span style="display:flex;gap:10px"><button class="cancel">Cancelar</button><button class="primary ok">Guardar</button></span>
+      </div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.cancel').onclick = close;
+
+    wrap.querySelectorAll('.modebar button').forEach(b => b.onclick = () => {
+      mode = b.dataset.m;
+      wrap.querySelectorAll('.modebar button').forEach(x => x.classList.toggle('on', x===b));
+      wrap.querySelector('#fDias').style.display = mode==='dias' ? '' : 'none';
+      wrap.querySelector('#fFechas').style.display = mode==='fechas' ? '' : 'none';
+    });
+
+    const delBtn = wrap.querySelector('#tDelete');
+    if (delBtn) delBtn.onclick = async () => {
+      const ok = await BT.confirm({ title:'Eliminar tarea', message:'¿Seguro que quieres eliminar "'+existing.nombre+'"?', okText:'Eliminar', danger:true });
+      if (!ok) return;
+      await BT.api('/api/proyectos/' + proyectoId + '/tareas/' + existing.id, { method:'DELETE' });
+      close(); BT.toast('Tarea eliminada'); load();
+    };
+
+    wrap.querySelector('.ok').onclick = async () => {
+      const nombre = wrap.querySelector('#tName').value.trim();
+      if (!nombre){ BT.toast('Falta el nombre'); return; }
+      let fechaInicio, fechaFin;
+      if (mode === 'dias'){
+        const offset = parseInt(wrap.querySelector('#tOffset').value,10) || 0;
+        const dur = Math.max(1, parseInt(wrap.querySelector('#tDur').value,10) || 1);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const start = addDays(today, offset);
+        fechaInicio = fmtISO(start);
+        fechaFin = fmtISO(addDays(start, dur-1));
+      } else {
+        fechaFin = wrap.querySelector('#tEnd').value;
+        fechaInicio = wrap.querySelector('#tStart').value || null;
+        if (!fechaFin){ BT.toast('Falta la fecha de término'); return; }
+      }
+      const body = {
+        nombre, fase: wrap.querySelector('#tFase').value.trim() || null,
+        fechaInicio, fechaFin,
+        color: wrap.querySelector('#tColor').value, estado: wrap.querySelector('#tEstado').value,
+        asignados: [...wrap.querySelectorAll('#tAssign input:checked')].map(i => i.value),
+      };
+      try{
+        if (existing) {
+          await BT.api('/api/proyectos/' + proyectoId + '/tareas/' + existing.id, { method:'PATCH', body: JSON.stringify(body) });
+        } else {
+          const d = await BT.api('/api/proyectos/' + proyectoId + '/tareas', { method:'POST', body: JSON.stringify(body) });
+          if (fromIdeaId) {
+            await BT.api('/api/proyectos/' + proyectoId + '/ideas/' + fromIdeaId, { method:'PATCH', body: JSON.stringify({ convertidoTipo:'tarea', convertidoId: d.tarea.id }) });
+            fromIdeaId = null;
+            history.replaceState(null, '', location.pathname);
+          }
+        }
+        close(); BT.toast(existing ? 'Tarea actualizada' : 'Tarea creada'); load();
+      }catch(e){ BT.toast('Error: ' + e.message); }
+    };
+  }
+  document.getElementById('btnAddTask').addEventListener('click', () => openTaskModal(null));
+
+  document.getElementById('btnBell').addEventListener('click', async () => {
+    const d = await BT.api('/api/notificaciones');
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box" style="max-width:400px">
+      <h3>Notificaciones</h3>
+      <div style="max-height:340px;overflow-y:auto">${d.notificaciones.length ? d.notificaciones.map(n => `
+        <div style="padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px">${n.mensaje}<div style="font-size:10.5px;color:var(--text-dim);margin-top:3px">${n.proyectoNombre||''}</div></div>
+      `).join('') : '<div class="empty-mini">Sin notificaciones todavía.</div>'}</div>
+      <div class="bt-actions" style="margin-top:14px"><button class="primary ok">Cerrar</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.ok').onclick = close;
+    await BT.api('/api/notificaciones/marcar-leidas', { method:'POST' });
+    document.getElementById('bellDot').classList.remove('on');
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>

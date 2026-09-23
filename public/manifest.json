@@ -1,0 +1,12 @@
+{
+  "name": "Bitácora Compartida",
+  "short_name": "Bitácora",
+  "description": "Seguimiento de tareas, Gantt y checklist entre Manuel y Gonzalo",
+  "start_url": "/proyectos",
+  "display": "standalone",
+  "background_color": "#f6f4f0",
+  "theme_color": "#0052ea",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
