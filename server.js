@@ -48,7 +48,7 @@ app.get('/proyecto/:id/checklist', (req, res) => res.sendFile(path.join(__dirnam
 
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`\nBitácora Compartida corriendo en http://localhost:${PORT}\n`);
+    console.log(`\nyesnow corriendo en http://localhost:${PORT}\n`);
   });
 }
 

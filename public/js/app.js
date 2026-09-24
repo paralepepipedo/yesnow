@@ -83,7 +83,7 @@ window.BT = (function(){
     bar.id = 'bt-install';
     bar.innerHTML = `
       <img src="/icons/icon.svg" alt="">
-      <div class="bt-install-text"><b>Instalar Bitácora Compartida</b><span>Accedé más rápido desde tu pantalla de inicio</span></div>
+      <div class="bt-install-text"><b>Instalar yesnow</b><span>Accedé más rápido desde tu pantalla de inicio</span></div>
       <button class="bt-install-go">Instalar</button>
       <button class="bt-install-x" aria-label="Cerrar">✕</button>`;
     document.body.appendChild(bar);

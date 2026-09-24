@@ -1,6 +1,6 @@
 {
-  "name": "Bitácora Compartida",
-  "short_name": "Bitácora",
+  "name": "yesnow",
+  "short_name": "yesnow",
   "description": "Seguimiento de tareas, Gantt y checklist entre Manuel y Gonzalo",
   "start_url": "/proyectos",
   "display": "standalone",
