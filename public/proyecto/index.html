@@ -669,6 +669,10 @@ body{padding-bottom:100px}
         carousel.querySelectorAll('.icard').forEach(x=>x.classList.toggle('on', x===b));
         showIdeaDetail(ideas[+b.dataset.i]);
       };
+      carousel.ondblclick = (e) => {
+        const b = e.target.closest('.icard'); if(!b) return;
+        openIdeaActionsModal(ideas[+b.dataset.i]);
+      };
       showIdeaDetail(ideas[0]);
     }
 
@@ -718,6 +722,34 @@ body{padding-bottom:100px}
     const convTarea = d.querySelector('[data-act="conv-tarea"]');
     if (convCheck) convCheck.onclick = () => convertIdea(idea, 'checklist');
     if (convTarea) convTarea.onclick = () => convertIdea(idea, 'tarea');
+  }
+
+  function openIdeaActionsModal(idea){
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box">
+      <h3>${idea.autor||'—'} · ${timeAgo(idea.creadoEn)}</h3>
+      <div style="color:var(--text-dim);font-style:italic;margin-top:4px">"${idea.texto}"</div>
+      ${idea.convertidoTipo ? `<div class="drow" style="margin-top:8px"><span>Ya convertida</span><b>${idea.convertidoTipo==='checklist'?'Ítem de checklist':'Tarea del Gantt'}</b></div>` : ''}
+      <div class="idea-actions">
+        <button data-act="edit"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> Editar</button>
+        <button class="del" data-act="del"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Eliminar</button>
+        ${!idea.convertidoTipo ? `
+        <button data-act="conv-check">→ Ítem checklist</button>
+        <button data-act="conv-tarea">→ Tarea Gantt</button>` : ''}
+      </div>
+      <div class="bt-actions" style="margin-top:16px"><button class="cancel">Cerrar</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.cancel').onclick = close;
+    wrap.querySelector('[data-act="edit"]').onclick = () => { close(); openIdeaModal(idea); };
+    wrap.querySelector('[data-act="del"]').onclick = () => { close(); deleteIdeaConfirm(idea); };
+    const convCheck = wrap.querySelector('[data-act="conv-check"]');
+    const convTarea = wrap.querySelector('[data-act="conv-tarea"]');
+    if (convCheck) convCheck.onclick = () => { close(); convertIdea(idea, 'checklist'); };
+    if (convTarea) convTarea.onclick = () => { close(); convertIdea(idea, 'tarea'); };
   }
 
   async function deleteIdeaConfirm(idea){
