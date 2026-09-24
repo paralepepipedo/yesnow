@@ -46,6 +46,10 @@ app.get('/proyecto/:id', (req, res) => res.sendFile(path.join(__dirname, 'public
 app.get('/proyecto/:id/gantt', (req, res) => res.sendFile(path.join(__dirname, 'public', 'proyecto', 'gantt.html')));
 app.get('/proyecto/:id/checklist', (req, res) => res.sendFile(path.join(__dirname, 'public', 'proyecto', 'checklist.html')));
 
-app.listen(PORT, () => {
-  console.log(`\nBitácora Compartida corriendo en http://localhost:${PORT}\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\nBitácora Compartida corriendo en http://localhost:${PORT}\n`);
+  });
+}
+
+module.exports = app;
