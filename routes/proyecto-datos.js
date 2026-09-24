@@ -18,6 +18,24 @@ router.get('/', isAuth, async (req, res) => {
   res.json({ proyecto: { id: p.id, nombre: p.nombre, descripcion: p.descripcion, referenciaUrl: p.referencia_url } });
 });
 
+router.patch('/', isAuth, async (req, res) => {
+  const b = req.body || {};
+  if (b.nombre !== undefined && !b.nombre.trim()) return res.status(400).json({ error: 'Falta el nombre' });
+  const sets = []; const vals = []; let i = 1;
+  if (b.nombre !== undefined) { sets.push(`nombre = $${i++}`); vals.push(b.nombre.trim()); }
+  if (b.descripcion !== undefined) { sets.push(`descripcion = $${i++}`); vals.push(b.descripcion || null); }
+  if (b.referenciaUrl !== undefined) { sets.push(`referencia_url = $${i++}`); vals.push(b.referenciaUrl || null); }
+  if (!sets.length) return res.status(400).json({ error: 'Nada que actualizar' });
+  vals.push(req.params.id);
+  const { rows } = await db.query(
+    `UPDATE bitacora_proyectos SET ${sets.join(', ')} WHERE id = $${i} RETURNING *`,
+    vals
+  );
+  if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
+  const p = rows[0];
+  res.json({ proyecto: { id: p.id, nombre: p.nombre, descripcion: p.descripcion, referenciaUrl: p.referencia_url } });
+});
+
 // ---- tareas ----
 router.get('/tareas', isAuth, async (req, res) => {
   try {

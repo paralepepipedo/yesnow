@@ -14,6 +14,8 @@ body{padding-bottom:100px}
 .appbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
 .appbar .back{color:var(--text-dim);font-size:20px;line-height:1;border:0;background:none;padding:2px;text-decoration:none}
 .appbar h2{font-size:14.5px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.appbar .editp{border:0;background:none;color:var(--text-dim);padding:4px;flex:none}
+.appbar .editp:hover{color:var(--accent)}
 .appbar .who{display:flex;align-items:center;gap:10px}
 .bell{position:relative;border:0;background:none;color:var(--text);padding:4px}
 .bell .dot{position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid var(--surface);display:none}
@@ -140,12 +142,12 @@ body{padding-bottom:100px}
   padding:8px 14px;border-radius:9px;box-shadow:var(--shadow)}
 .btn-add:hover{filter:brightness(1.08)}
 
-.ideacards{display:flex;flex-direction:column;gap:9px}
+.ideacards{display:flex;flex-direction:column;gap:9px;max-height:336px;overflow-y:auto;padding-right:2px}
 .ideac{border:2px solid var(--border);border-left:4px solid var(--accent);border-radius:10px;padding:11px 13px;background:var(--surface);
-  cursor:pointer;transition:transform .12s,background .12s;text-align:left;width:100%;font-family:inherit;box-shadow:var(--shadow)}
+  cursor:pointer;transition:transform .12s,background .12s;text-align:left;width:100%;font-family:inherit;box-shadow:var(--shadow);flex:none}
 .ideac:hover{transform:translateX(2px)}
 .ideac.on{background:var(--accent-soft)}
-.ideac .itext{font-size:13px;line-height:1.45;color:var(--text);font-style:italic;font-weight:500}
+.ideac .itext{font-size:13px;line-height:1.45;color:var(--text);font-style:italic;font-weight:500;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .ideac .imeta{font-size:10.5px;color:var(--text-dim);margin-top:8px;display:flex;align-items:center;gap:7px}
 .ideac .imeta .avatar{width:18px;height:18px;font-size:8px}
 .ideac .iconv{margin-left:auto;font-size:9px;font-weight:800;padding:2px 7px;border-radius:6px;background:var(--ok-bg);color:var(--ok);white-space:nowrap}
@@ -178,6 +180,7 @@ body{padding-bottom:100px}
 <div class="appbar">
   <a class="back" href="/proyectos">‹</a>
   <h2 id="pTitle">Cargando…</h2>
+  <button class="editp" id="btnEditProj" aria-label="Editar proyecto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
   <div class="who">
     <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema"></button>
     <button class="bell" id="btnBell"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="dot" id="bellDot"></span></button>
@@ -293,6 +296,7 @@ body{padding-bottom:100px}
   const proyectoId = location.pathname.split('/').filter(Boolean)[1];
   let usuarios = [];
   let me = null;
+  let proyecto = null;
   let filterUser = 'all';
   let cacheTareas = [], cacheIdeas = [];
   const PRIO_LABEL_D = { alta:'Alta', media:'Media', baja:'Baja' };
@@ -340,10 +344,11 @@ body{padding-bottom:100px}
       document.getElementById('pTitle').textContent = 'Proyecto no encontrado'; return;
     }
     me = meRes.usuario; usuarios = usuariosRes.usuarios;
+    proyecto = proyectoRes.proyecto;
     document.getElementById('meAvatar').textContent = me.nombre.slice(0,2).toUpperCase();
     document.getElementById('meAvatar').className = 'avatar ' + me.avatar_color;
-    document.getElementById('pTitle').textContent = proyectoRes.proyecto.nombre;
-    document.title = proyectoRes.proyecto.nombre + ' — yesnow';
+    document.getElementById('pTitle').textContent = proyecto.nombre;
+    document.title = proyecto.nombre + ' — yesnow';
     document.getElementById('navGantt').href = '/proyecto/' + proyectoId + '/gantt';
     document.getElementById('navCheck').href = '/proyecto/' + proyectoId + '/checklist';
     document.getElementById('linkGanttD').href = '/proyecto/' + proyectoId + '/gantt';
@@ -766,6 +771,38 @@ body{padding-bottom:100px}
           fechaInicio: wrap.querySelector('#tStart').value || null, fechaFin, asignados
         })});
         close(); BT.toast('Tarea creada'); loadAll();
+      }catch(e){ BT.toast('Error: ' + e.message); }
+    };
+  });
+
+  // ---- Editar proyecto ----
+  document.getElementById('btnEditProj').addEventListener('click', () => {
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box">
+      <h3>Editar proyecto</h3>
+      <div class="formf">
+        <div><label>Nombre *</label><input id="peName" value="${(proyecto.nombre||'').replace(/"/g,'&quot;')}"></div>
+        <div><label>Descripción</label><textarea id="peDesc">${proyecto.descripcion||''}</textarea></div>
+        <div><label>URL de referencia</label><input id="peUrl" value="${(proyecto.referenciaUrl||'').replace(/"/g,'&quot;')}" placeholder="https://…"></div>
+      </div>
+      <div class="bt-actions" style="margin-top:16px"><button class="cancel">Cancelar</button><button class="primary ok">Guardar</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.cancel').onclick = close;
+    wrap.querySelector('.ok').onclick = async () => {
+      const nombre = wrap.querySelector('#peName').value.trim();
+      if (!nombre) { BT.toast('Falta el nombre'); return; }
+      try{
+        const r = await BT.api('/api/proyectos/' + proyectoId, { method:'PATCH', body: JSON.stringify({
+          nombre, descripcion: wrap.querySelector('#peDesc').value.trim(), referenciaUrl: wrap.querySelector('#peUrl').value.trim()
+        })});
+        proyecto = r.proyecto;
+        document.getElementById('pTitle').textContent = proyecto.nombre;
+        document.title = proyecto.nombre + ' — yesnow';
+        close(); BT.toast('Proyecto actualizado');
       }catch(e){ BT.toast('Error: ' + e.message); }
     };
   });
