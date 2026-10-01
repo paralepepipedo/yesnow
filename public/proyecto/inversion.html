@@ -164,7 +164,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
   const plans = () => movs.filter(m => m.estado === 'plan');
   function totals(list){
     const t = { hp: 0, reloj: 0, CLP: 0, USD: 0 };
-    list.forEach(m => { if (m.tipo === 'tiempo') { t.hp += m.cantidad * Math.max(1, m.personas.length); t.reloj += m.cantidad; } else t[m.moneda] += m.cantidad; });
+    list.forEach(m => { if (m.tipo === 'tiempo') { t.hp += m.cantidad; } else t[m.moneda] += m.cantidad; });
     return t;
   }
   function futTotals(){
@@ -244,7 +244,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
       $$('#fMon button', wrap).forEach(b => b.classList.toggle('on', b.dataset.v === mon));
       q('#gDinero').hidden = tipo !== 'dinero'; q('#gTiempo').hidden = tipo !== 'tiempo';
       q('#lQuien').textContent = tipo === 'tiempo' ? 'Quiénes participaron' : (isPlan ? 'Quién pagará (opcional)' : 'Quién pagó');
-      q('#hQuien').textContent = tipo === 'tiempo' ? 'Las horas cuentan para cada participante (4 h con 2 personas = 8 h-persona).' : '';
+      q('#hQuien').textContent = tipo === 'tiempo' ? 'Cada participante suma las horas completas, pero el total del proyecto no se duplica (4 h con 2 personas = 4 h en total).' : '';
       q('#gQuien').hidden = isPlan && tipo === 'tiempo';
     }
     $$('#fTipo button', wrap).forEach(b => b.onclick = () => { tipo = b.dataset.v; sync(); });
@@ -289,7 +289,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
       <div class="d">${dshort(m.fecha)}</div>
       <div class="t"><div class="c" title="${esc(m.concepto)}">${esc(m.concepto)}</div>
         <div class="m"><span class="chip cat">${esc(m.categoria)}</span>${m.tareaId && tareaOf(m.tareaId) ? `<span class="chip" title="${esc(tareaOf(m.tareaId).nombre)}">${esc(faseDe(m))} · ${esc(tareaOf(m.tareaId).nombre)}</span>` : ''}<span>${m.tipo === 'tiempo' ? nombres(m).join(' y ') : 'Pagó ' + nombres(m).join(', ')}</span></div></div>
-      <div class="amt ${m.tipo === 'tiempo' ? 'time' : ''}">${m.tipo === 'tiempo' ? hrs(m.cantidad) + (m.personas.length > 1 ? `<small>${hrs(m.cantidad * m.personas.length)}-persona</small>` : '') : money(m.cantidad, m.moneda)}</div>
+      <div class="amt ${m.tipo === 'tiempo' ? 'time' : ''}">${m.tipo === 'tiempo' ? hrs(m.cantidad) + (m.personas.length > 1 ? `<small>${hrs(m.cantidad)} cada uno</small>` : '') : money(m.cantidad, m.moneda)}</div>
       <div class="acts"><button class="ib" data-edit="${m.id}" aria-label="Editar">${SVG.edit}</button><button class="ib del" data-del="${m.id}" aria-label="Eliminar">${SVG.del}</button></div></div>`).join('');
 
     const futHtml = P.slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))).map(p => {
@@ -306,7 +306,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
     R.forEach(m => keyOf(m).forEach(k => {
       g[k] = g[k] || { hp: 0, CLP: 0, USD: 0 };
       const n = Math.max(1, m.personas.length);
-      if (m.tipo === 'tiempo') g[k].hp += groupBy === 'persona' ? m.cantidad : m.cantidad * n;
+      if (m.tipo === 'tiempo') g[k].hp += m.cantidad;
       else g[k][m.moneda] += (groupBy === 'persona' && n > 1) ? m.cantidad / n : m.cantidad;
     }));
     const grows = Object.entries(g).sort((a, b) => (b[1].CLP + b[1].USD * 950) - (a[1].CLP + a[1].USD * 950) || b[1].hp - a[1].hp);
@@ -315,7 +315,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
     $('#view').innerHTML = `
       <div class="pghead"><h1>Inversión</h1><button class="btn primary" id="bAdd">+ Registrar</button></div>
       <div class="kpis">
-        <div class="kpi time"><div class="kl">Tiempo invertido</div><div class="kv">${hrs(T.hp)}</div><div class="ks">${hrs(T.reloj)} de reloj · horas-persona</div></div>
+        <div class="kpi time"><div class="kl">Tiempo invertido</div><div class="kv">${hrs(T.hp)}</div><div class="ks">horas reales del proyecto, sin duplicar</div></div>
         <div class="kpi"><div class="kl">Dinero · CLP</div><div class="kv">${money(T.CLP, 'CLP')}</div><div class="ks">pesos chilenos</div></div>
         <div class="kpi"><div class="kl">Dinero · USD</div><div class="kv">${money(T.USD, 'USD')}</div><div class="ks">dólares</div></div>
         <div class="kpi fut"><div class="kl">Comprometido a futuro</div><div class="kv" style="font-size:15px;line-height:1.5;white-space:normal">${FT.CLP ? money(FT.CLP, 'CLP') : ''}${FT.CLP && FT.USD ? '<br>' : ''}${FT.USD ? money(FT.USD, 'USD') : ''}${!FT.CLP && !FT.USD ? '—' : ''}</div><div class="ks">${FT.h ? hrs(FT.h) + ' planificadas · ' : ''}${P.length} pendiente${P.length === 1 ? '' : 's'}</div></div>
@@ -330,7 +330,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
               <button class="bt-gear" id="bGear" title="Gestionar categorías" aria-label="Gestionar categorías" style="width:30px;height:30px"></button></div>
             ${mvHtml || `<div class="empty">${R.length ? 'No hay movimientos con estos filtros.' : 'Aún no registras inversión. Usa «+ Registrar» para anotar horas o gastos.'}</div>`}</div>
           <div class="card"><div class="chead"><h3>Resumen</h3><div class="seg" id="gSeg"><button data-g="categoria" class="${groupBy === 'categoria' ? 'on' : ''}">Categoría</button><button data-g="persona" class="${groupBy === 'persona' ? 'on' : ''}">Persona</button><button data-g="fase" class="${groupBy === 'fase' ? 'on' : ''}">Fase</button></div></div>
-            <div class="scroll"><table class="rt"><thead><tr><th>${groupBy === 'categoria' ? 'Categoría' : groupBy === 'persona' ? 'Persona' : 'Fase (por tarea)'}</th><th>Tiempo</th><th>CLP</th><th>USD</th></tr></thead><tbody>${sumHtml || '<tr><td colspan="4" class="empty">Sin datos todavía.</td></tr>'}</tbody><tfoot><tr><td>Total</td><td class="n">${hrs(T.hp)}</td><td class="n">${money(T.CLP, 'CLP')}</td><td class="n">${money(T.USD, 'USD')}</td></tr></tfoot></table></div></div>
+            <div class="scroll"><table class="rt"><thead><tr><th>${groupBy === 'categoria' ? 'Categoría' : groupBy === 'persona' ? 'Persona' : 'Fase (por tarea)'}</th><th>Tiempo</th><th>CLP</th><th>USD</th></tr></thead><tbody>${sumHtml || '<tr><td colspan="4" class="empty">Sin datos todavía.</td></tr>'}</tbody><tfoot><tr><td>Total</td><td class="n">${hrs(T.hp)}</td><td class="n">${money(T.CLP, 'CLP')}</td><td class="n">${money(T.USD, 'USD')}</td></tr></tfoot></table></div>${groupBy === 'persona' ? '<div class="hint" style="padding:8px 16px 12px">Una reunión compartida suma las horas completas a cada persona. Por eso las horas por persona no se suman entre sí: el total del proyecto es el de abajo.</div>' : ''}</div>
         </div>
         <div class="card"><div class="chead"><h3>Gastos futuros</h3><button class="btn small" id="bAddFut">+ Agregar</button><span class="sub">Lo que viene. Al pagarlo pasa al registro.</span></div>
           ${futHtml || '<div class="empty">No hay gastos planificados. Agrega lo que sabes que vas a pagar.</div>'}</div>
