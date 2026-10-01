@@ -101,9 +101,53 @@ window.BT = (function(){
     if (bar) bar.remove();
   }
 
+  // ---- Combobox: lista desplegable que acepta texto libre y evita duplicados ----
+  const normTxt = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const escTxt = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function combo(host, opts){
+    const { value = '', getOptions, noun = 'opción', allowNone = false, noneLabel = 'Sin fase', placeholder = 'Elegir o escribir…' } = opts;
+    host.classList.add('bt-combo');
+    host.innerHTML = `<div class="bt-cbox"><input type="text" autocomplete="off" role="combobox" aria-expanded="false" placeholder="${escTxt(placeholder)}"><button type="button" class="bt-cbtn" tabindex="-1" aria-label="Ver opciones"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button></div><ul class="bt-clist" hidden></ul>`;
+    const input = host.querySelector('input'), list = host.querySelector('.bt-clist'), btn = host.querySelector('.bt-cbtn');
+    input.value = value;
+    let entries = [], hl = 0;
+    const exact = (q) => getOptions().find(o => normTxt(o) === normTxt(q));
+    function paint(){
+      list.innerHTML = entries.map((e, i) => `<li data-i="${i}" class="${e.cls}${i === hl ? ' hl' : ''}" role="option">${escTxt(e.label)}</li>`).join('');
+      const cur = list.querySelector('.hl'); if (cur) cur.scrollIntoView({ block: 'nearest' });
+    }
+    function build(){
+      const q = input.value, all = getOptions(), ex = exact(q);
+      const shown = (!q.trim() || ex) ? all : all.filter(o => normTxt(o).includes(normTxt(q)));
+      entries = [];
+      if (allowNone && (!q.trim() || ex)) entries.push({ v: '', label: noneLabel, cls: 'none' });
+      shown.forEach(o => entries.push({ v: o, label: o, cls: '' }));
+      if (q.trim() && !ex) entries.push({ v: q.trim(), label: `+ Crear ${noun} «${q.trim()}»`, cls: 'new' });
+      if (!entries.length) entries.push({ v: null, label: `Aún no hay ${noun}s. Escribe para crear una.`, cls: 'none' });
+      const at = entries.findIndex(e => e.v !== null && ex && normTxt(e.v) === normTxt(q));
+      hl = at >= 0 ? at : 0;
+      paint();
+    }
+    const open = () => { build(); list.hidden = false; input.setAttribute('aria-expanded', 'true'); };
+    const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); };
+    function pick(i){ const e = entries[i]; if (!e || e.v === null) return; input.value = e.v; close(); }
+    input.addEventListener('focus', open);
+    input.addEventListener('input', open);
+    btn.addEventListener('click', () => { if (list.hidden) { input.focus(); open(); } else close(); });
+    list.addEventListener('mousedown', (e) => { e.preventDefault(); const li = e.target.closest('li'); if (li) pick(+li.dataset.i); });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') { if (list.hidden) open(); else { hl = Math.min(entries.length - 1, hl + 1); paint(); } e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { hl = Math.max(0, hl - 1); paint(); e.preventDefault(); }
+      else if (e.key === 'Enter' && !list.hidden) { pick(hl); e.preventDefault(); }
+      else if (e.key === 'Escape' && !list.hidden) { close(); e.stopPropagation(); }
+    });
+    input.addEventListener('blur', close);
+    return { get value(){ const raw = input.value.trim(); return exact(raw) ?? raw; }, set value(v){ input.value = v; } };
+  }
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
   }
 
-  return { toast, confirm, api, theme: { get: getTheme, set: setTheme, cycle: cycleTheme, isDark } };
+  return { toast, confirm, api, combo, theme: { get: getTheme, set: setTheme, cycle: cycleTheme, isDark } };
 })();

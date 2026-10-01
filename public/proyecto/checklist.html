@@ -112,7 +112,7 @@ body{padding-bottom:100px}
 .ck-rail button .rname span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ck-rail button .rname span:last-child{font-family:'IBM Plex Mono',monospace;font-weight:400;color:var(--text-dim);flex:none}
 .ck-rail button .rtrack{height:5px;border-radius:99px;background:var(--surface-2);overflow:hidden;display:flex;margin-top:6px}
-.ck-tablewrap{border:2px solid var(--border);background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.ck-tablewrap{border:2px solid var(--border);background:var(--surface);border-radius:14px;overflow-x:auto;box-shadow:var(--shadow)}
 .ck-tablehead{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap}
 .ck-tablehead h3{font-size:13px;font-weight:700}
 .searchwrap{flex:1;min-width:160px;position:relative}
@@ -138,9 +138,9 @@ body{padding-bottom:100px}
 .cktable .ck-c1{width:36px}
 .cktable .ck-num{width:32px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px}
 .cktable .ck-name{font-weight:600}
-.cktable .ck-ev{color:var(--text-dim);max-width:340px}
-.cktable .ck-actions-h,.cktable .ck-actions-cell{width:64px;text-align:right;white-space:nowrap}
-.ck-rowbtn{border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:7px;width:26px;height:26px;display:inline-grid;place-items:center;margin-left:4px}
+.cktable .ck-ev{color:var(--text-dim);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cktable .ck-actions-h,.cktable .ck-actions-cell{width:92px;min-width:92px;text-align:right;white-space:nowrap}
+.ck-rowbtn{border:1.5px solid var(--text-dim);background:var(--surface);color:var(--text);border-radius:8px;width:30px;height:30px;display:inline-grid;place-items:center;margin-left:4px}
 .ck-rowbtn:hover{color:var(--text);border-color:var(--accent)}
 .ck-rowbtn[data-act="del"]:hover{color:var(--danger);border-color:var(--danger)}
 .ck-empty{padding:30px 14px;text-align:center;color:var(--text-dim);font-size:12.5px}
@@ -203,6 +203,7 @@ body{padding-bottom:100px}
   <div class="ck-compare">
     <div class="cchead">
       <h3 id="ccTitle">Cobertura por categoría</h3>
+      <button class="bt-gear" id="btnCats" title="Gestionar categorías" aria-label="Gestionar categorías" style="margin-left:auto"></button>
       <button class="btn-add" id="btnAddItemD"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nuevo ítem</button>
     </div>
     <div class="cc-grid" id="ccGrid"></div>
@@ -247,6 +248,7 @@ body{padding-bottom:100px}
 <div class="fab"><button id="btnAddItem">+ Nuevo ítem</button></div>
 
 <script src="/js/app.js"></script>
+<script src="/js/grupos.js"></script>
 <script>
 (function(){
   const proyectoId = location.pathname.split('/').filter(Boolean)[1];
@@ -307,6 +309,8 @@ body{padding-bottom:100px}
       });
     });
 
+    document.getElementById('btnCats').innerHTML = BT.gearIcon;
+    document.getElementById('btnCats').onclick = openCatsManager;
     refreshBell();
     await load();
   }
@@ -316,7 +320,7 @@ body{padding-bottom:100px}
 
   let firstLoad = true, highlightShown = false, newItemOpened = false;
   async function load(){
-    const d = await BT.api('/api/proyectos/' + proyectoId + '/checklist');
+    const [d] = await Promise.all([ BT.api('/api/proyectos/' + proyectoId + '/checklist'), BT.loadGrupos(proyectoId) ]);
     items = d.items;
     if (firstLoad) {
       items.forEach(it => collapsedCats.add(it.categoria));
@@ -596,15 +600,17 @@ body{padding-bottom:100px}
     });
   });
 
+  const openCatsManager = () => BT.manageGroups({ kind: 'categoria', proyectoId, miembros: () => items, reload: load });
   function openItemModal(existing, prefillNombre){
-    const cats = [...new Set(items.map(i=>i.categoria))];
+    const getCats = () => [...new Set([...BT.grupos.categorias, ...items.map(i=>i.categoria)])];
     const wrap = document.createElement('div');
     wrap.className = 'bt-modal';
     wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box">
       <h3>${existing ? 'Editar ítem' : 'Nuevo ítem de checklist'}</h3>
       <div class="formf">
-        <div><label>Categoría *</label><input id="ciCat" list="ciCatList" placeholder="Ej: Finanzas y Rendición" value="${existing?existing.categoria.replace(/"/g,'&quot;'):''}"><datalist id="ciCatList">${cats.map(c=>`<option value="${c}">`).join('')}</datalist></div>
-        <div><label>Nombre *</label><input id="ciName" placeholder="Ej: Pago electrónico" value="${existing?existing.nombre.replace(/"/g,'&quot;'):(prefillNombre?prefillNombre.replace(/"/g,'&quot;'):'')}"></div>
+        <div><label>Categoría *</label><div class="bt-fieldrow"><div id="ciCat"></div><button type="button" class="bt-gear" id="ciCatGear" title="Gestionar categorías" aria-label="Gestionar categorías"></button></div>
+          <div class="hint">Tema o área del ítem (ej: Finanzas, Legal).</div></div>
+        <div><label>Nombre *</label><input id="ciName" autocomplete="off" placeholder="Ej: Pago electrónico" value="${existing?existing.nombre.replace(/"/g,'&quot;'):(prefillNombre?prefillNombre.replace(/"/g,'&quot;'):'')}"></div>
         <div class="row2"><div><label>Prioridad</label><select id="ciPrio">
           <option value="" ${!existing||!existing.prioridad?'selected':''}>Sin definir</option>
           <option value="alta" ${existing&&existing.prioridad==='alta'?'selected':''}>Alta</option>
@@ -626,11 +632,13 @@ body{padding-bottom:100px}
       <div class="bt-actions" style="margin-top:16px"><button class="cancel">Cancelar</button><button class="primary ok">${existing?'Guardar':'Crear'}</button></div>
     </div>`;
     document.body.appendChild(wrap);
+    const catCombo = BT.combo(wrap.querySelector('#ciCat'), { value: existing ? existing.categoria : '', getOptions: getCats, noun: 'categoría', placeholder: 'Ej: Finanzas y Rendición' });
+    const cg = wrap.querySelector('#ciCatGear'); cg.innerHTML = BT.gearIcon; cg.onclick = openCatsManager;
     const close = () => wrap.remove();
     wrap.querySelector('.bt-backdrop').onclick = close;
     wrap.querySelector('.cancel').onclick = close;
     wrap.querySelector('.ok').onclick = async () => {
-      const categoria = wrap.querySelector('#ciCat').value.trim();
+      const categoria = catCombo.value;
       const nombre = wrap.querySelector('#ciName').value.trim();
       if (!categoria || !nombre){ BT.toast('Falta la categoría o el nombre'); return; }
       const asignados = [...wrap.querySelectorAll('#ciAssign input:checked')].map(i => i.value);

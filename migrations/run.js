@@ -5,9 +5,12 @@ const bcrypt = require('bcrypt');
 const db = require('../lib/db');
 
 async function main() {
-  const sql = fs.readFileSync(path.join(__dirname, '001_init.sql'), 'utf8');
-  await db.query(sql);
-  console.log('[migrate] Tablas bitacora_* creadas u OK.');
+  // Los .sql son idempotentes (IF NOT EXISTS / ON CONFLICT): se aplican todos, en orden.
+  const files = fs.readdirSync(__dirname).filter(f => /^\d+_.*\.sql$/.test(f)).sort();
+  for (const f of files) {
+    await db.query(fs.readFileSync(path.join(__dirname, f), 'utf8'));
+    console.log('[migrate] ' + f + ' OK.');
+  }
 
   const { rows } = await db.query('SELECT count(*)::int AS n FROM bitacora_usuarios');
   if (rows[0].n === 0) {

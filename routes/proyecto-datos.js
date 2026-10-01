@@ -11,6 +11,20 @@ async function notificar(usuarioId, tipo, mensaje, proyectoId, tareaId) {
   );
 }
 
+const TIPOS = {
+  fase: { tabla: 'bitacora_tareas', col: 'fase' },
+  categoria: { tabla: 'bitacora_checklist_items', col: 'categoria' },
+};
+
+// Registra la fase/categoría en el catálogo si aún no existe (sin distinguir mayúsculas).
+async function asegurarGrupo(proyectoId, tipo, nombre) {
+  if (!nombre || !String(nombre).trim()) return;
+  await db.query(
+    `INSERT INTO bitacora_grupos (proyecto_id, tipo, nombre) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`,
+    [proyectoId, tipo, String(nombre).trim()]
+  );
+}
+
 router.get('/', isAuth, async (req, res) => {
   const { rows } = await db.query('SELECT * FROM bitacora_proyectos WHERE id = $1', [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
@@ -34,6 +48,79 @@ router.patch('/', isAuth, async (req, res) => {
   if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
   const p = rows[0];
   res.json({ proyecto: { id: p.id, nombre: p.nombre, descripcion: p.descripcion, referenciaUrl: p.referencia_url } });
+});
+
+// ---- fases y categorías (catálogo) ----
+router.get('/grupos', isAuth, async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT tipo, nombre FROM bitacora_grupos WHERE proyecto_id = $1 ORDER BY orden, lower(nombre)', [req.params.id]
+    );
+    res.json({
+      fases: rows.filter(r => r.tipo === 'fase').map(r => r.nombre),
+      categorias: rows.filter(r => r.tipo === 'categoria').map(r => r.nombre),
+    });
+  } catch (e) { console.error('[GET grupos]', e); res.status(500).json({ error: 'Error interno' }); }
+});
+
+router.post('/grupos', isAuth, async (req, res) => {
+  const { tipo, nombre } = req.body || {};
+  if (!TIPOS[tipo] || !nombre || !nombre.trim()) return res.status(400).json({ error: 'Datos inválidos' });
+  try {
+    const { rows } = await db.query(
+      `INSERT INTO bitacora_grupos (proyecto_id, tipo, nombre) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING RETURNING nombre`,
+      [req.params.id, tipo, nombre.trim()]
+    );
+    if (!rows[0]) return res.status(409).json({ error: 'Ya existe' });
+    res.json({ nombre: rows[0].nombre });
+  } catch (e) { console.error('[POST grupos]', e); res.status(500).json({ error: 'Error interno' }); }
+});
+
+// Renombra. Si el nuevo nombre ya existe exige { unir: true } y fusiona los miembros en el existente.
+router.patch('/grupos', isAuth, async (req, res) => {
+  const { tipo, nombre, nuevoNombre, unir } = req.body || {};
+  const T = TIPOS[tipo];
+  if (!T || !nombre || !nuevoNombre || !nuevoNombre.trim()) return res.status(400).json({ error: 'Datos inválidos' });
+  const nuevo = nuevoNombre.trim();
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows: otro } = await client.query(
+      `SELECT nombre FROM bitacora_grupos WHERE proyecto_id = $1 AND tipo = $2 AND lower(nombre) = lower($3) AND lower(nombre) <> lower($4)`,
+      [req.params.id, tipo, nuevo, nombre]
+    );
+    if (otro[0] && !unir) { await client.query('ROLLBACK'); return res.status(409).json({ error: 'Ya existe', existente: otro[0].nombre }); }
+    const destino = otro[0] ? otro[0].nombre : nuevo;
+    await client.query(`UPDATE ${T.tabla} SET ${T.col} = $1 WHERE proyecto_id = $2 AND ${T.col} = $3`, [destino, req.params.id, nombre]);
+    if (otro[0]) {
+      await client.query('DELETE FROM bitacora_grupos WHERE proyecto_id = $1 AND tipo = $2 AND nombre = $3', [req.params.id, tipo, nombre]);
+    } else {
+      await client.query('UPDATE bitacora_grupos SET nombre = $1 WHERE proyecto_id = $2 AND tipo = $3 AND nombre = $4', [destino, req.params.id, tipo, nombre]);
+    }
+    await client.query('COMMIT');
+    res.json({ nombre: destino, unido: !!otro[0] });
+  } catch (e) { await client.query('ROLLBACK'); console.error('[PATCH grupos]', e); res.status(500).json({ error: 'Error interno' }); }
+  finally { client.release(); }
+});
+
+// Fase: sus tareas pasan a "Sin fase". Categoría: solo se elimina si no tiene ítems.
+router.delete('/grupos', isAuth, async (req, res) => {
+  const { tipo, nombre } = req.query;
+  if (!TIPOS[tipo] || !nombre) return res.status(400).json({ error: 'Datos inválidos' });
+  const client = await db.pool.connect();
+  try {
+    await client.query('BEGIN');
+    if (tipo === 'fase') {
+      await client.query('UPDATE bitacora_tareas SET fase = NULL WHERE proyecto_id = $1 AND fase = $2', [req.params.id, nombre]);
+    } else {
+      const { rows } = await client.query('SELECT count(*)::int AS n FROM bitacora_checklist_items WHERE proyecto_id = $1 AND categoria = $2', [req.params.id, nombre]);
+      if (rows[0].n > 0) { await client.query('ROLLBACK'); return res.status(409).json({ error: 'La categoría tiene ítems' }); }
+    }
+    await client.query('DELETE FROM bitacora_grupos WHERE proyecto_id = $1 AND tipo = $2 AND nombre = $3', [req.params.id, tipo, nombre]);
+    await client.query('COMMIT');
+    res.json({ success: true });
+  } catch (e) { await client.query('ROLLBACK'); console.error('[DELETE grupos]', e); res.status(500).json({ error: 'Error interno' }); }
+  finally { client.release(); }
 });
 
 // ---- tareas ----
@@ -66,6 +153,7 @@ router.post('/tareas', isAuth, async (req, res) => {
        b.fechaInicio || null, b.fechaFin, b.color || '#0052ea', req.session.usuario.id]
     );
     const t = rows[0];
+    await asegurarGrupo(req.params.id, 'fase', t.fase);
     const { rows: proj } = await db.query('SELECT nombre FROM bitacora_proyectos WHERE id = $1', [req.params.id]);
     for (const uid of (b.asignados || [])) {
       if (uid !== req.session.usuario.id) {
@@ -91,6 +179,7 @@ router.patch('/tareas/:tareaId', isAuth, async (req, res) => {
     );
     if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
     const t = rows[0];
+    if (b.fase) await asegurarGrupo(req.params.id, 'fase', t.fase);
     if (b.asignados !== undefined) {
       const { rows: proj } = await db.query('SELECT nombre FROM bitacora_proyectos WHERE id = $1', [req.params.id]);
       for (const uid of b.asignados) {
@@ -136,6 +225,7 @@ router.patch('/checklist/:itemId', isAuth, async (req, res) => {
   );
   if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
   const it = rows[0];
+  if (b.categoria) await asegurarGrupo(req.params.id, 'categoria', it.categoria);
   if (b.asignados !== undefined) {
     const { rows: proj } = await db.query('SELECT nombre FROM bitacora_proyectos WHERE id = $1', [req.params.id]);
     for (const uid of b.asignados) {
@@ -206,6 +296,7 @@ router.post('/checklist', isAuth, async (req, res) => {
     [req.params.id, b.categoria.trim(), b.nombre.trim(), b.prioridad || null, b.estado || 'pendiente', b.evidencia || null, b.asignados || [], b.tareaId || null]
   );
   const it = rows[0];
+  await asegurarGrupo(req.params.id, 'categoria', it.categoria);
   const { rows: proj } = await db.query('SELECT nombre FROM bitacora_proyectos WHERE id = $1', [req.params.id]);
   for (const uid of (b.asignados || [])) {
     if (uid !== req.session.usuario.id) {
