@@ -68,6 +68,7 @@ body{padding-bottom:100px}
 .ckev .ckev-actions{display:flex;gap:8px;margin-top:9px}
 .ckev .ckev-actions button{border:1px solid var(--border);background:var(--surface);color:var(--text-dim);border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
 .ckev .ckev-actions button:hover{color:var(--text);border-color:var(--accent)}
+.ckev .ckev-actions button.send{background:var(--accent);border-color:var(--accent-ink);color:#fff;box-shadow:0 2px 0 var(--accent-ink)}
 .ckev .ckev-actions button.del:hover{color:var(--danger);border-color:var(--danger)}
 .ckitem .chev{margin-left:auto;color:var(--text-dim);flex:none;transition:transform .15s;cursor:pointer}
 .ckitem.open .chev{transform:rotate(180deg)}
@@ -129,7 +130,8 @@ body{padding-bottom:100px}
 .cktable th.sortable:hover{color:var(--accent)}
 .cktable th .sarrow{display:inline-block;margin-left:2px;opacity:.35;font-size:9px}
 .cktable th.active .sarrow{opacity:1;color:var(--accent)}
-.ck-gantt{width:110px}
+.ck-gantt{min-width:150px}
+.gtbadge .gtxt{max-width:210px;overflow:hidden;text-overflow:ellipsis}
 .gtbadge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;white-space:nowrap}
 .gtbadge.linked{background:var(--ok-bg);color:var(--ok)}
 .gtbadge.none{color:var(--text-dim);border:1.5px dashed var(--border)}
@@ -152,6 +154,47 @@ body{padding-bottom:100px}
 .formf label{font-size:11.5px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px}
 .formf input,.formf select{width:100%;border:1.5px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:10px;padding:10px 11px;font-family:inherit;font-size:13px}
 .checkrow{display:flex;gap:14px;flex-wrap:wrap}
+
+/* Modal de ítem con panel lateral a Gantt (se abre como puerta) */
+.bt-modal .bt-box.split{max-width:440px;max-height:calc(100vh - 32px);overflow:auto;transition:max-width .5s cubic-bezier(.3,.7,.2,1)}
+.bt-modal .bt-box.split.open{max-width:900px}
+.splitgrid{display:flex}
+.splitgrid>.lf{flex:1;min-width:0}
+.pwrap{flex:none;width:0;overflow:hidden;perspective:1000px;transition:width .5s cubic-bezier(.3,.7,.2,1),margin .5s cubic-bezier(.3,.7,.2,1)}
+.bt-box.open .pwrap{width:400px;margin-left:22px}
+.bt-box.open.done .pwrap{overflow:visible}
+.pwrap .panel{width:400px;transform-origin:left center;transform:rotateY(-85deg);opacity:0;transition:transform .5s cubic-bezier(.3,.7,.2,1),opacity .35s;background:var(--surface-2);border-radius:12px;padding:16px;display:grid;grid-template-columns:minmax(0,1fr);gap:12px;align-content:start}
+.bt-box.open .pwrap .panel{transform:none;opacity:1}
+.panel h4{font-family:'Libre Franklin',system-ui,sans-serif;font-size:12.5px;margin:0;display:flex;justify-content:space-between;align-items:center}
+.panel label{font-size:11.5px;font-weight:700;color:var(--text-dim);display:block;margin-bottom:4px}
+.panel input[type=number],.panel input[type=date],.panel select{width:100%;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:10px;padding:9px 11px;font-family:inherit;font-size:13px}
+.panel .row2{display:flex;gap:10px}.panel .row2>div{flex:1;min-width:0}.panel .row2 label{white-space:nowrap}
+.panel .hint{font-size:11px;color:var(--text-dim);line-height:1.35;margin-top:4px}
+.panel .modebar{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface-2);padding:3px;border-radius:10px;border:1px solid var(--border)}
+.panel .modebar button{border:0;background:none;padding:7px;border-radius:8px;font-weight:600;font-size:12.5px;color:var(--text-dim)}
+.panel .modebar button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.panel label.radio{display:flex;gap:9px;align-items:flex-start;padding:10px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);cursor:pointer;margin:0;font-weight:400;color:var(--text)}
+.panel label.radio.on{border-color:var(--accent);background:var(--accent-soft)}
+.panel .radio b{font-size:12.5px}
+.panel .radio .sub{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin-top:10px}
+.panel [hidden]{display:none!important}
+.bt-gear.sm{width:28px;height:28px;border-radius:8px}
+.gstate{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.state{display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:700;padding:5px 10px;border-radius:99px;max-width:100%}
+.state.on{background:var(--ok-bg);color:var(--ok)}
+.state.off{background:var(--surface-2);color:var(--text-dim)}
+.tosend{border:1.5px solid var(--accent-ink);background:var(--accent);color:#fff;border-radius:9px;padding:4px 11px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 0 var(--accent-ink);transition:transform .08s,box-shadow .08s}
+.tosend:hover{filter:brightness(1.08)}
+.tosend:active{transform:translateY(2px);box-shadow:0 0 0 var(--accent-ink)}
+.tosend.lg{padding:9px 16px;font-size:13px;border-radius:10px}
+@media (max-width:720px){
+  .bt-modal .bt-box.split.open{max-width:440px}
+  .splitgrid{flex-direction:column}
+  .pwrap,.bt-box.open .pwrap{width:100%;margin-left:0;max-height:0;transition:max-height .5s}
+  .bt-box.open .pwrap{max-height:1400px;margin-top:18px}
+  .pwrap .panel{width:100%}
+  .panel .row2{flex-direction:column}
+}
 </style>
 </head>
 <body>
@@ -320,7 +363,7 @@ body{padding-bottom:100px}
 
   let firstLoad = true, highlightShown = false, newItemOpened = false;
   async function load(){
-    const [d] = await Promise.all([ BT.api('/api/proyectos/' + proyectoId + '/checklist'), BT.loadGrupos(proyectoId) ]);
+    const [d] = await Promise.all([ BT.api('/api/proyectos/' + proyectoId + '/checklist'), BT.loadGrupos(proyectoId), reloadTareas() ]);
     items = d.items;
     if (firstLoad) {
       items.forEach(it => collapsedCats.add(it.categoria));
@@ -412,6 +455,7 @@ body{padding-bottom:100px}
         <div class="ckev-who">${(it.asignados||[]).length ? (it.asignados||[]).map(u=>`<span class="who-chip">${avatarHtml(u,20)}<b>${u.nombre}</b></span>`).join('') : '<span style="opacity:.7">Sin asignar</span>'}</div>
         ${it.evidencia || '<span style="opacity:.7">Sin notas todavía.</span>'}
         <div class="ckev-actions">
+          ${it.tareaId ? '' : '<button class="send" data-act="send">→ Gantt</button>'}
           <button class="edit" data-act="edit"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> Editar</button>
           <button class="del" data-act="del"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Eliminar</button>
         </div>
@@ -446,8 +490,11 @@ body{padding-bottom:100px}
 
   function ganttBadgeHtml(it){
     const t = it.tareaId && tareas.find(x => x.id === it.tareaId);
-    if (t) return `<span class="gtbadge linked" title="${t.nombre.replace(/"/g,'&quot;')}"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Vinculado</span>`;
-    return `<span class="gtbadge none">Sin tarea</span>`;
+    if (t) {
+      const txt = (t.fase ? t.fase + ' · ' : '') + t.nombre;
+      return `<span class="gtbadge linked" title="${txt.replace(/"/g,'&quot;')}">${LINK_SVG}<span class="gtxt">${txt.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span></span>`;
+    }
+    return `<span class="gtbadge none">Sin planificar</span> <button class="tosend" data-act="send" title="Enviar a Gantt">Gantt ${ARROW_SVG}</button>`;
   }
 
   function renderDesktop(){
@@ -524,6 +571,9 @@ body{padding-bottom:100px}
       if (!tr) { console.warn('[checkbox] no se encontró la fila <tr>'); return; }
       toggleEstado(tr.dataset.id);
     }));
+    tbody.querySelectorAll('[data-act="send"]').forEach(btn => btn.addEventListener('click', (e) => {
+      const tr = e.target.closest('tr'); openItemModal(items.find(i=>i.id===tr.dataset.id), null, true);
+    }));
     tbody.querySelectorAll('[data-act="edit"]').forEach(btn => btn.addEventListener('click', (e) => {
       const tr = e.target.closest('tr'); openItemModal(items.find(i=>i.id===tr.dataset.id));
     }));
@@ -547,6 +597,8 @@ body{padding-bottom:100px}
       [chev, text].forEach(t => t && t.addEventListener('click', (e) => { e.stopPropagation(); el.classList.toggle('open'); }));
       const editBtn = el.querySelector('[data-act="edit"]');
       const delBtn = el.querySelector('[data-act="del"]');
+      const sendBtn = el.querySelector('[data-act="send"]');
+      if (sendBtn) sendBtn.addEventListener('click', (e) => { e.stopPropagation(); openItemModal(items.find(i=>i.id===el.dataset.id), null, true); });
       if (editBtn) editBtn.addEventListener('click', (e) => { e.stopPropagation(); openItemModal(items.find(i=>i.id===el.dataset.id)); });
       if (delBtn) delBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
@@ -600,54 +652,140 @@ body{padding-bottom:100px}
     });
   });
 
+  const LINK_SVG = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+  const ARROW_SVG = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+  const CHEV_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
   const openCatsManager = () => BT.manageGroups({ kind: 'categoria', proyectoId, miembros: () => items, reload: load });
-  function openItemModal(existing, prefillNombre){
+  const pad2 = n => String(n).padStart(2, '0');
+  const fmtISO = d => d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate());
+  const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+  const attr = s => String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const faseOptions = () => [...new Set([...BT.grupos.fases, ...tareas.map(t => t.fase).filter(Boolean)])];
+  const openFasesManager = () => BT.manageGroups({ kind: 'fase', proyectoId, miembros: () => tareas, reload: reloadTareas });
+  async function reloadTareas(){ tareas = (await BT.api('/api/proyectos/' + proyectoId + '/tareas')).tareas; }
+
+  // existing: ítem a editar (o null). openGantt: abre ya el panel "Enviar a Gantt".
+  function openItemModal(existing, prefillNombre, openGantt){
     const getCats = () => [...new Set([...BT.grupos.categorias, ...items.map(i=>i.categoria)])];
+    let panel = !!openGantt, touched = !!openGantt, prog = 'dias', faseCombo = null;
+    let mode = existing && existing.tareaId ? 'vincular' : (openGantt ? 'nueva' : 'none');
+    let linkId = existing && existing.tareaId || '';
+    const pv = { off: 0, dur: 5, ini: '', fin: '' };
     const wrap = document.createElement('div');
     wrap.className = 'bt-modal';
-    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box">
-      <h3>${existing ? 'Editar ítem' : 'Nuevo ítem de checklist'}</h3>
-      <div class="formf">
-        <div><label>Categoría *</label><div class="bt-fieldrow"><div id="ciCat"></div><button type="button" class="bt-gear" id="ciCatGear" title="Gestionar categorías" aria-label="Gestionar categorías"></button></div>
-          <div class="hint">Tema o área del ítem (ej: Finanzas, Legal).</div></div>
-        <div><label>Nombre *</label><input id="ciName" autocomplete="off" placeholder="Ej: Pago electrónico" value="${existing?existing.nombre.replace(/"/g,'&quot;'):(prefillNombre?prefillNombre.replace(/"/g,'&quot;'):'')}"></div>
-        <div class="row2"><div><label>Prioridad</label><select id="ciPrio">
-          <option value="" ${!existing||!existing.prioridad?'selected':''}>Sin definir</option>
-          <option value="alta" ${existing&&existing.prioridad==='alta'?'selected':''}>Alta</option>
-          <option value="media" ${existing&&existing.prioridad==='media'?'selected':''}>Media</option>
-          <option value="baja" ${existing&&existing.prioridad==='baja'?'selected':''}>Baja</option>
-        </select></div>
-          <div><label>Estado</label><select id="ciEstado">
-            <option value="pendiente" ${(!existing||existing.estado==='pendiente')?'selected':''}>Pendiente</option>
-            <option value="parcial" ${existing&&existing.estado==='parcial'?'selected':''}>Parcial</option>
-            <option value="implementado" ${existing&&existing.estado==='implementado'?'selected':''}>Implementado</option>
-          </select></div></div>
-        <div><label>Notas / evidencia (opcional)</label><textarea id="ciEv" rows="3" style="width:100%;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:10px;padding:10px 11px;font-family:inherit;font-size:13px;resize:vertical">${existing&&existing.evidencia?existing.evidencia:''}</textarea></div>
-        <div><label>Responsable</label><div class="checkrow" id="ciAssign">${usuarios.map(u=>`<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text)"><input type="checkbox" value="${u.id}" ${existing&&(existing.asignados||[]).some(a=>a.id===u.id)?'checked':''}> ${u.nombre}</label>`).join('')}</div></div>
-        <div><label>Tarea vinculada del Gantt (opcional)</label><select id="ciTarea">
-          <option value="">Sin vincular</option>
-          ${tareas.map(t=>`<option value="${t.id}" ${existing&&existing.tareaId===t.id?'selected':''}>${t.nombre.replace(/"/g,'&quot;')}</option>`).join('')}
-        </select></div>
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box split"><div class="splitgrid">
+      <div class="lf">
+        <h3>${existing ? 'Editar ítem' : 'Nuevo ítem de checklist'}</h3>
+        <div class="formf">
+          <div><label>Categoría *</label><div class="bt-fieldrow"><div id="ciCat"></div><button type="button" class="bt-gear" id="ciCatGear" title="Gestionar categorías" aria-label="Gestionar categorías"></button></div>
+            <div class="hint">Tema o área del ítem (ej: Finanzas, Legal).</div></div>
+          <div><label>Nombre *</label><input id="ciName" autocomplete="off" placeholder="Ej: Pago electrónico" value="${attr(existing ? existing.nombre : (prefillNombre || ''))}"></div>
+          <div class="row2"><div><label>Prioridad</label><select id="ciPrio">
+            <option value="" ${!existing||!existing.prioridad?'selected':''}>Sin definir</option>
+            <option value="alta" ${existing&&existing.prioridad==='alta'?'selected':''}>Alta</option>
+            <option value="media" ${existing&&existing.prioridad==='media'?'selected':''}>Media</option>
+            <option value="baja" ${existing&&existing.prioridad==='baja'?'selected':''}>Baja</option>
+          </select></div>
+            <div><label>Estado</label><select id="ciEstado">
+              <option value="pendiente" ${(!existing||existing.estado==='pendiente')?'selected':''}>Pendiente</option>
+              <option value="parcial" ${existing&&existing.estado==='parcial'?'selected':''}>Parcial</option>
+              <option value="implementado" ${existing&&existing.estado==='implementado'?'selected':''}>Implementado</option>
+            </select></div></div>
+          <div><label>Notas / evidencia (opcional)</label><textarea id="ciEv" rows="3" style="width:100%;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:10px;padding:10px 11px;font-family:inherit;font-size:13px;resize:vertical">${existing&&existing.evidencia?existing.evidencia:''}</textarea></div>
+          <div><label>Responsable</label><div class="checkrow" id="ciAssign">${usuarios.map(u=>`<label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text)"><input type="checkbox" value="${u.id}" ${existing&&(existing.asignados||[]).some(a=>a.id===u.id)?'checked':''}> ${u.nombre}</label>`).join('')}</div></div>
+          <div class="gstate" id="ciGState"></div>
+        </div>
+        <div class="bt-actions" style="margin-top:16px"><button class="cancel">Cancelar</button><button class="primary ok">${existing?'Guardar':'Crear'}</button></div>
       </div>
-      <div class="bt-actions" style="margin-top:16px"><button class="cancel">Cancelar</button><button class="primary ok">${existing?'Guardar':'Crear'}</button></div>
-    </div>`;
+      <div class="pwrap"><div class="panel" id="ciPanel"></div></div>
+    </div></div>`;
     document.body.appendChild(wrap);
-    const catCombo = BT.combo(wrap.querySelector('#ciCat'), { value: existing ? existing.categoria : '', getOptions: getCats, noun: 'categoría', placeholder: 'Ej: Finanzas y Rendición' });
-    const cg = wrap.querySelector('#ciCatGear'); cg.innerHTML = BT.gearIcon; cg.onclick = openCatsManager;
+    const box = wrap.querySelector('.bt-box');
+    const $ = (s) => wrap.querySelector(s);
+
+    const catCombo = BT.combo($('#ciCat'), { value: existing ? existing.categoria : '', getOptions: getCats, noun: 'categoría', placeholder: 'Ej: Finanzas y Rendición' });
+    const cg = $('#ciCatGear'); cg.innerHTML = BT.gearIcon; cg.onclick = openCatsManager;
+
+    const tareaOf = (id) => tareas.find(t => t.id === id);
+    function renderState(){
+      const t = existing && existing.tareaId && tareaOf(existing.tareaId);
+      $('#ciGState').innerHTML = (t
+        ? `<span class="state on">${LINK_SVG} En Gantt · ${t.fase ? attr(t.fase) : 'Sin fase'} · ${attr(t.nombre)}</span>`
+        : '<span class="state off">○ Sin planificar</span>')
+        + (panel ? '' : `<button type="button" class="tosend lg" id="ciOpenGantt">${t ? 'Cambiar vínculo' : 'Enviar a Gantt'} ${ARROW_SVG}</button>`);
+      const b = $('#ciOpenGantt'); if (b) b.onclick = () => { panel = touched = true; if (mode === 'none') mode = 'nueva'; renderPanel(); renderState(); openDoor(); };
+    }
+    function keepPanelValues(){
+      if ($('#pOff')) Object.assign(pv, { off: $('#pOff').value, dur: $('#pDur').value, ini: $('#pIni').value, fin: $('#pFin').value });
+      if ($('#pTarea')) linkId = $('#pTarea').value;
+    }
+    function renderPanel(){
+      const slot = $('#ciPanel');
+      if (!panel) { slot.innerHTML = ''; return; }
+      keepPanelValues();
+      const opt = (v, title, sub) => `<label class="radio ${mode===v?'on':''}"><input type="radio" name="pm" value="${v}" ${mode===v?'checked':''}><div style="flex:1;min-width:0"><b>${title}</b>${mode===v && sub ? `<div class="sub">${sub}</div>` : ''}</div></label>`;
+      slot.innerHTML = `<h4>Planificación en Gantt <button type="button" class="bt-gear sm" id="pClose" aria-label="Cerrar panel">${CHEV_SVG}</button></h4>
+        ${opt('none', 'Sin tarea en Gantt', '')}
+        ${opt('nueva', 'Crear tarea nueva a partir de este ítem',
+          `<div><label>Fase (opcional)</label><div class="bt-fieldrow"><div id="pFase"></div><button type="button" class="bt-gear" id="pGear" title="Gestionar fases" aria-label="Gestionar fases"></button></div></div>
+           <div><label>Programación</label><div class="modebar" id="pMode"><button type="button" data-m="dias" class="${prog==='dias'?'on':''}">Por días</button><button type="button" data-m="fechas" class="${prog==='fechas'?'on':''}">Por fechas</button></div></div>
+           <div id="pDias" class="row2" ${prog==='dias'?'':'hidden'}><div><label for="pOff">Empieza en (días desde hoy)</label><input id="pOff" type="number" min="0" value="${attr(pv.off)}"></div><div><label for="pDur">Duración (días)</label><input id="pDur" type="number" min="1" value="${attr(pv.dur)}"></div></div>
+           <div id="pFechas" class="row2" ${prog==='fechas'?'':'hidden'}><div><label for="pIni">Inicio</label><input id="pIni" type="date" value="${attr(pv.ini)}"></div><div><label for="pFin">Vence *</label><input id="pFin" type="date" value="${attr(pv.fin)}"></div></div>
+           <div class="hint">La tarea se llamará igual que el ítem, tendrá sus mismos responsables y quedará vinculada.</div>`)}
+        ${opt('vincular', 'Vincular a una tarea existente',
+          `<div><select id="pTarea"><option value="">Elegir tarea…</option>${tareas.map(t => `<option value="${t.id}" ${linkId===t.id?'selected':''}>${attr(t.nombre)} — ${attr(t.fase || 'Sin fase')}</option>`).join('')}</select><div class="hint">Varios ítems pueden compartir una misma tarea.</div></div>`)}`;
+      slot.querySelectorAll('input[name=pm]').forEach(r => r.onchange = () => { mode = r.value; renderPanel(); });
+      $('#pClose').onclick = () => { keepPanelValues(); box.classList.remove('open', 'done'); setTimeout(() => { panel = false; renderPanel(); renderState(); }, 520); };
+      if (mode === 'nueva') {
+        faseCombo = BT.combo($('#pFase'), { value: faseCombo ? faseCombo.value : '', getOptions: faseOptions, noun: 'fase', allowNone: true });
+        const g = $('#pGear'); g.innerHTML = BT.gearIcon; g.onclick = openFasesManager;
+        slot.querySelectorAll('#pMode button').forEach(b => b.onclick = () => {
+          prog = b.dataset.m; slot.querySelectorAll('#pMode button').forEach(o => o.classList.toggle('on', o === b));
+          $('#pDias').hidden = prog !== 'dias'; $('#pFechas').hidden = prog !== 'fechas';
+        });
+      }
+    }
+    const openDoor = () => requestAnimationFrame(() => requestAnimationFrame(() => {
+      box.classList.add('open'); setTimeout(() => box.classList.add('done'), 560);
+      if (window.matchMedia('(max-width:720px)').matches) setTimeout(() => $('#ciPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+    }));
+
     const close = () => wrap.remove();
     wrap.querySelector('.bt-backdrop').onclick = close;
     wrap.querySelector('.cancel').onclick = close;
+    renderState(); renderPanel(); if (panel) openDoor();
+
     wrap.querySelector('.ok').onclick = async () => {
       const categoria = catCombo.value;
-      const nombre = wrap.querySelector('#ciName').value.trim();
+      const nombre = $('#ciName').value.trim();
       if (!categoria || !nombre){ BT.toast('Falta la categoría o el nombre'); return; }
+      keepPanelValues();
       const asignados = [...wrap.querySelectorAll('#ciAssign input:checked')].map(i => i.value);
       const body = {
-        categoria, nombre, prioridad: wrap.querySelector('#ciPrio').value || null,
-        estado: wrap.querySelector('#ciEstado').value, evidencia: wrap.querySelector('#ciEv').value.trim() || null,
-        asignados, tareaId: wrap.querySelector('#ciTarea').value || null,
+        categoria, nombre, prioridad: $('#ciPrio').value || null,
+        estado: $('#ciEstado').value, evidencia: $('#ciEv').value.trim() || null,
+        asignados, tareaId: existing ? (existing.tareaId || null) : null,
       };
       try{
+        if (touched && panel) {
+          if (mode === 'none') body.tareaId = null;
+          else if (mode === 'vincular') {
+            if (!linkId) { BT.toast('Elige la tarea a vincular'); return; }
+            body.tareaId = linkId;
+          } else {
+            let fechaInicio, fechaFin;
+            if (prog === 'dias') {
+              const today = new Date(); today.setHours(0,0,0,0);
+              const start = addDays(today, parseInt(pv.off, 10) || 0);
+              fechaInicio = fmtISO(start); fechaFin = fmtISO(addDays(start, Math.max(1, parseInt(pv.dur, 10) || 1) - 1));
+            } else {
+              fechaFin = pv.fin; fechaInicio = pv.ini || null;
+              if (!fechaFin) { BT.toast('Falta la fecha de término de la tarea'); return; }
+            }
+            const d = await BT.api('/api/proyectos/' + proyectoId + '/tareas', { method:'POST', body: JSON.stringify({ nombre, fase: faseCombo.value || null, fechaInicio, fechaFin, asignados }) });
+            body.tareaId = d.tarea.id;
+          }
+        }
         if (existing) {
           await BT.api('/api/proyectos/' + proyectoId + '/checklist/' + existing.id, { method:'PATCH', body: JSON.stringify(body) });
         } else {
@@ -658,7 +796,9 @@ body{padding-bottom:100px}
             history.replaceState(null, '', location.pathname);
           }
         }
-        close(); BT.toast(existing?'Ítem actualizado':'Ítem creado'); load();
+        close();
+        BT.toast(existing ? 'Ítem actualizado' : 'Ítem creado');
+        await reloadTareas(); load();
       }catch(e){ BT.toast('Error: ' + e.message); }
     };
   }
