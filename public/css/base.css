@@ -216,3 +216,10 @@ svg{display:block}
 .bt-pindone h3{font-size:18px;margin-bottom:6px}
 .bt-pindone p{margin:0;color:var(--text-dim);font-size:13px}
 @media (max-width:420px){.bt-pin input{height:50px;font-size:20px}.bt-pin{gap:8px}}
+
+/* ---- botón flotante: en pantallas grandes es un "+" compacto que no tapa el contenido ---- */
+@media (min-width:900px){
+  body .fab button{width:52px;height:52px;padding:0;justify-content:center;gap:0;font-size:0}
+  body .fab button::before{content:"+";font-size:30px;font-weight:500;line-height:1;margin-top:-2px}
+  body .fab button:hover{filter:brightness(1.1)}
+}

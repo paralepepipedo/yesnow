@@ -288,9 +288,10 @@ body{padding-bottom:100px}
   </div>
 </div>
 
-<div class="fab"><button id="btnAddTask">+ Nueva tarea</button></div>
+<div class="fab"><button id="btnAddTask" title="Nueva tarea" aria-label="Nueva tarea">+ Nueva tarea</button></div>
 
 <script src="/js/app.js"></script>
+<script src="/js/grupos.js"></script>
 <script>
 (function(){
   const proyectoId = location.pathname.split('/').filter(Boolean)[1];
@@ -376,7 +377,7 @@ body{padding-bottom:100px}
 
   async function loadAll(){
     const [tareasRes, ckRes, ideasRes] = await Promise.all([
-      BT.api('/api/proyectos/' + proyectoId + '/tareas'),
+      BT.api('/api/proyectos/' + proyectoId + '/tareas').then(async r => { try { await BT.loadGrupos(proyectoId); } catch (e) {} return r; }),
       BT.api('/api/proyectos/' + proyectoId + '/checklist'),
       BT.api('/api/proyectos/' + proyectoId + '/ideas'),
     ]);
@@ -781,7 +782,7 @@ body{padding-bottom:100px}
       <h3>Nueva tarea</h3>
       <div class="formf">
         <div><label>Nombre *</label><input id="tName" placeholder="Ej: Revisar convenios de pago"></div>
-        <div><label>Fase (opcional)</label><input id="tFase" placeholder="Ej: Diseño"></div>
+        <div><label>Fase (opcional)</label><div id="tFase"></div></div>
         <div style="display:flex;gap:10px"><div style="flex:1"><label>Inicio</label><input id="tStart" type="date"></div>
           <div style="flex:1"><label>Vence *</label><input id="tEnd" type="date"></div></div>
         <div><label>Asignar a</label><div class="checkrow" id="tAssign">${usuarios.map(u=>`<label><input type="checkbox" value="${u.id}" ${u.id===me.id?'checked':''}> ${u.nombre}</label>`).join('')}</div></div>
@@ -789,6 +790,7 @@ body{padding-bottom:100px}
       <div class="bt-actions" style="margin-top:16px"><button class="cancel">Cancelar</button><button class="primary ok">Crear</button></div>
     </div>`;
     document.body.appendChild(wrap);
+    const faseCombo = BT.combo(wrap.querySelector('#tFase'), { value: '', getOptions: () => [...new Set([...BT.grupos.fases, ...cacheTareas.map(t => t.fase).filter(Boolean)])], noun: 'fase', allowNone: true, placeholder: 'Ej: Diseño' });
     const close = () => wrap.remove();
     wrap.querySelector('.bt-backdrop').onclick = close;
     wrap.querySelector('.cancel').onclick = close;
@@ -799,7 +801,7 @@ body{padding-bottom:100px}
       const asignados = [...wrap.querySelectorAll('#tAssign input:checked')].map(i => i.value);
       try{
         await BT.api('/api/proyectos/' + proyectoId + '/tareas', { method:'POST', body: JSON.stringify({
-          nombre, fase: wrap.querySelector('#tFase').value.trim() || null,
+          nombre, fase: faseCombo.value || null,
           fechaInicio: wrap.querySelector('#tStart').value || null, fechaFin, asignados
         })});
         close(); BT.toast('Tarea creada'); loadAll();

@@ -125,22 +125,22 @@ body{padding-bottom:100px}
 .groupswitch button{border:0;background:none;padding:7px 11px;border-radius:6px;font-size:11px;font-weight:800;color:var(--text-dim)}
 .groupswitch button.on{background:var(--accent);color:#fff}
 .cktable{width:100%;border-collapse:collapse}
-.cktable th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text);font-weight:800;padding:9px 14px;border-bottom:1.5px solid var(--border);background:var(--surface-2);white-space:nowrap}
+.cktable th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text);font-weight:800;padding:9px 10px;border-bottom:1.5px solid var(--border);background:var(--surface-2);white-space:nowrap}
 .cktable th.sortable{cursor:pointer;user-select:none}
 .cktable th.sortable:hover{color:var(--accent)}
 .cktable th .sarrow{display:inline-block;margin-left:2px;opacity:.35;font-size:9px}
 .cktable th.active .sarrow{opacity:1;color:var(--accent)}
-.ck-gantt{min-width:150px}
-.gtbadge .gtxt{max-width:210px;overflow:hidden;text-overflow:ellipsis}
+.ck-gantt{min-width:130px}
+.gtbadge .gtxt{max-width:150px;overflow:hidden;text-overflow:ellipsis}
 .gtbadge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;white-space:nowrap}
 .gtbadge.linked{background:var(--ok-bg);color:var(--ok)}
 .gtbadge.none{color:var(--text-dim);border:1.5px dashed var(--border)}
-.cktable td{padding:11px 14px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:top}
+.cktable td{padding:11px 10px;border-bottom:1px solid var(--border);font-size:12.5px;vertical-align:top}
 .cktable tr:last-child td{border-bottom:0}
 .cktable .ck-c1{width:36px}
 .cktable .ck-num{width:32px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px}
 .cktable .ck-name{font-weight:600}
-.cktable .ck-ev{color:var(--text-dim);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cktable .ck-ev{color:var(--text-dim);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cktable .ck-actions-h,.cktable .ck-actions-cell{width:92px;min-width:92px;text-align:right;white-space:nowrap}
 .ck-rowbtn{border:1.5px solid var(--text-dim);background:var(--surface);color:var(--text);border-radius:8px;width:30px;height:30px;display:inline-grid;place-items:center;margin-left:4px}
 .ck-rowbtn:hover{color:var(--text);border-color:var(--accent)}
@@ -288,7 +288,7 @@ body{padding-bottom:100px}
 </div>
 
 <div class="cc-tip" id="ccTip"></div>
-<div class="fab"><button id="btnAddItem">+ Nuevo ítem</button></div>
+<div class="fab"><button id="btnAddItem" title="Nuevo ítem" aria-label="Nuevo ítem">+ Nuevo ítem</button></div>
 
 <script src="/js/app.js"></script>
 <script src="/js/grupos.js"></script>
