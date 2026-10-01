@@ -244,7 +244,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
       $$('#fMon button', wrap).forEach(b => b.classList.toggle('on', b.dataset.v === mon));
       q('#gDinero').hidden = tipo !== 'dinero'; q('#gTiempo').hidden = tipo !== 'tiempo';
       q('#lQuien').textContent = tipo === 'tiempo' ? 'Quiénes participaron' : (isPlan ? 'Quién pagará (opcional)' : 'Quién pagó');
-      q('#hQuien').textContent = tipo === 'tiempo' ? 'Cada participante suma las horas completas, pero el total del proyecto no se duplica (4 h con 2 personas = 4 h en total).' : '';
+      q('#hQuien').textContent = tipo === 'tiempo' ? 'Cada participante suma las horas completas.' : '';
       q('#gQuien').hidden = isPlan && tipo === 'tiempo';
     }
     $$('#fTipo button', wrap).forEach(b => b.onclick = () => { tipo = b.dataset.v; sync(); });
@@ -315,7 +315,7 @@ select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
     $('#view').innerHTML = `
       <div class="pghead"><h1>Inversión</h1><button class="btn primary" id="bAdd">+ Registrar</button></div>
       <div class="kpis">
-        <div class="kpi time"><div class="kl">Tiempo invertido</div><div class="kv">${hrs(T.hp)}</div><div class="ks">horas reales del proyecto, sin duplicar</div></div>
+        <div class="kpi time"><div class="kl">Tiempo invertido</div><div class="kv">${hrs(T.hp)}</div><div class="ks">horas del proyecto</div></div>
         <div class="kpi"><div class="kl">Dinero · CLP</div><div class="kv">${money(T.CLP, 'CLP')}</div><div class="ks">pesos chilenos</div></div>
         <div class="kpi"><div class="kl">Dinero · USD</div><div class="kv">${money(T.USD, 'USD')}</div><div class="ks">dólares</div></div>
         <div class="kpi fut"><div class="kl">Comprometido a futuro</div><div class="kv" style="font-size:15px;line-height:1.5;white-space:normal">${FT.CLP ? money(FT.CLP, 'CLP') : ''}${FT.CLP && FT.USD ? '<br>' : ''}${FT.USD ? money(FT.USD, 'USD') : ''}${!FT.CLP && !FT.USD ? '—' : ''}</div><div class="ks">${FT.h ? hrs(FT.h) + ' planificadas · ' : ''}${P.length} pendiente${P.length === 1 ? '' : 's'}</div></div>
