@@ -145,9 +145,165 @@ window.BT = (function(){
     return { get value(){ const raw = input.value.trim(); return exact(raw) ?? raw; }, set value(v){ input.value = v; } };
   }
 
+  // ---- Menú del avatar: Inversión, Cambiar PIN, Mis proyectos, Cerrar sesión ----
+  const PROF_ICON = {
+    chart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+    key: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+    grid: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+    out: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+    eye: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    eyeOff: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
+    check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    checkBig: '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  };
+
+  // Campo de 4 casillas para un PIN. Devuelve { el, value, full, setError, reveal, focus }.
+  function pinField(onChange){
+    const el = document.createElement('div');
+    el.className = 'bt-pin';
+    el.innerHTML = [0,1,2,3].map(i => `<input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" aria-label="Dígito ${i+1}">`).join('');
+    const boxes = [...el.querySelectorAll('input')];
+    const value = () => boxes.map(b => b.value).join('');
+    const sync = () => { boxes.forEach(b => b.classList.toggle('filled', !!b.value)); onChange && onChange(); };
+    boxes.forEach((b, i) => {
+      b.addEventListener('input', () => {
+        b.value = b.value.replace(/\D/g, '').slice(-1);
+        if (b.value && boxes[i + 1]) boxes[i + 1].focus();
+        sync();
+      });
+      b.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !b.value && boxes[i - 1]) { boxes[i - 1].value = ''; boxes[i - 1].focus(); sync(); e.preventDefault(); }
+        else if (e.key === 'ArrowLeft' && boxes[i - 1]) boxes[i - 1].focus();
+        else if (e.key === 'ArrowRight' && boxes[i + 1]) boxes[i + 1].focus();
+      });
+      b.addEventListener('focus', () => b.select());
+      b.addEventListener('paste', (e) => {
+        const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 4);
+        if (!d) return;
+        e.preventDefault();
+        boxes.forEach((x, k) => { x.value = d[k] || ''; });
+        (boxes[Math.min(d.length, 3)]).focus(); sync();
+      });
+    });
+    return {
+      el, value, full: () => value().length === 4,
+      setError(on){ el.classList.toggle('err', !!on); if (on) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); } },
+      setOk(on){ el.classList.toggle('ok', !!on); },
+      reveal(on){ boxes.forEach(b => { b.type = on ? 'text' : 'password'; }); },
+      clear(){ boxes.forEach(b => { b.value = ''; b.classList.remove('filled'); }); },
+      focus(){ boxes[0].focus(); },
+    };
+  }
+
+  function changePin(){
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box bt-pinbox" role="dialog" aria-label="Cambiar PIN">
+      <button type="button" class="bt-pinx" aria-label="Cerrar">${PROF_ICON.x}</button>
+      <div class="bt-pinhead"><div class="bt-pinico">${PROF_ICON.key}</div>
+        <div><h3>Cambiar PIN</h3><p>Elige 4 dígitos. Es lo que usas para entrar.</p></div></div>
+      <div class="bt-pinbody">
+        <div class="bt-pinrow"><div class="bt-pintop"><span>PIN actual</span><button type="button" class="bt-pineye" aria-label="Mostrar u ocultar PIN">${PROF_ICON.eye}</button></div><div id="pnCur"></div><div class="bt-pinmsg" id="mCur"></div></div>
+        <div class="bt-pinrow"><div class="bt-pintop"><span>PIN nuevo</span></div><div id="pnNew"></div><div class="bt-pinmsg" id="mNew"></div></div>
+        <div class="bt-pinrow"><div class="bt-pintop"><span>Repite el PIN nuevo</span></div><div id="pnRep"></div><div class="bt-pinmsg" id="mRep"></div></div>
+      </div>
+      <button type="button" class="bt-pinsave" disabled>Guardar PIN</button>
+    </div>`;
+    document.body.appendChild(wrap);
+    const box = wrap.querySelector('.bt-box');
+    const $ = (s) => wrap.querySelector(s);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    $('.bt-pinx').onclick = close;
+    wrap.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+    let showing = false, busy = false;
+    const cur = pinField(update), nw = pinField(update), rep = pinField(update);
+    $('#pnCur').appendChild(cur.el); $('#pnNew').appendChild(nw.el); $('#pnRep').appendChild(rep.el);
+    const msg = (id, text, kind) => { const m = $(id); m.textContent = text || ''; m.className = 'bt-pinmsg' + (kind ? ' ' + kind : ''); };
+    $('.bt-pineye').onclick = () => { showing = !showing; [cur, nw, rep].forEach(f => f.reveal(showing)); $('.bt-pineye').innerHTML = showing ? PROF_ICON.eyeOff : PROF_ICON.eye; };
+
+    function update(){
+      cur.setError(false); msg('#mCur', '');
+      nw.setError(false); nw.setOk(false); rep.setError(false); rep.setOk(false);
+      let valid = cur.full() && nw.full() && rep.full();
+      if (nw.full() && cur.full() && nw.value() === cur.value()) { nw.setError(true); msg('#mNew', 'Debe ser distinto al actual.', 'bad'); valid = false; }
+      else if (nw.full()) { nw.setOk(true); msg('#mNew', ''); } else msg('#mNew', '');
+      if (rep.full() && nw.full()) {
+        if (rep.value() === nw.value()) { rep.setOk(true); msg('#mRep', 'Coinciden', 'good'); }
+        else { rep.setError(true); msg('#mRep', 'No coinciden.', 'bad'); valid = false; }
+      } else msg('#mRep', '');
+      $('.bt-pinsave').disabled = !valid || busy;
+    }
+
+    async function save(){
+      if ($('.bt-pinsave').disabled) return;
+      busy = true; $('.bt-pinsave').disabled = true; $('.bt-pinsave').textContent = 'Guardando…';
+      try {
+        await api('/api/auth/pin', { method: 'POST', body: JSON.stringify({ actual: cur.value(), nuevo: nw.value() }) });
+        box.innerHTML = `<div class="bt-pindone"><div class="bt-pinok">${PROF_ICON.checkBig}</div><h3>PIN actualizado</h3><p>La próxima vez entra con tu PIN nuevo.</p></div>`;
+        setTimeout(close, 1700);
+      } catch (e) {
+        busy = false; $('.bt-pinsave').textContent = 'Guardar PIN';
+        update();
+        if (/actual/i.test(e.message)) { cur.clear(); cur.setError(true); msg('#mCur', e.message, 'bad'); cur.focus(); $('.bt-pinsave').disabled = true; }
+        else toast(e.message);
+      }
+    }
+    $('.bt-pinsave').onclick = save;
+    wrap.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
+    cur.focus();
+  }
+
+  function initAvatarMenu(){
+    const av = document.getElementById('meAvatar');
+    if (!av || av.dataset.menu) return;
+    av.dataset.menu = '1';
+    av.setAttribute('role', 'button'); av.setAttribute('tabindex', '0'); av.setAttribute('aria-haspopup', 'menu'); av.setAttribute('aria-label', 'Menú de perfil');
+    av.style.cursor = 'pointer';
+    const m = location.pathname.match(/^\/proyecto\/([^/]+)/);
+    const proyectoId = m && m[1];
+    let menu = null;
+    const closeMenu = () => { if (menu) { menu.remove(); menu = null; av.setAttribute('aria-expanded', 'false'); } };
+    async function openMenu(){
+      let nombre = '';
+      try { nombre = (await api('/api/auth/me')).usuario.nombre; } catch (e) { return; }
+      menu = document.createElement('div');
+      menu.className = 'bt-menu'; menu.setAttribute('role', 'menu');
+      menu.innerHTML = `<div class="bt-mwho"><b>${escTxt(nombre)}</b><span>${proyectoId ? 'Menú del proyecto' : 'Tu cuenta'}</span></div>
+        ${proyectoId ? `<a role="menuitem" href="/proyecto/${proyectoId}/inversion" class="${location.pathname.endsWith('/inversion') ? 'on' : ''}">${PROF_ICON.chart} Inversión del proyecto</a>` : ''}
+        <button role="menuitem" data-m="pin">${PROF_ICON.key} Cambiar PIN</button>
+        ${proyectoId ? `<a role="menuitem" href="/proyectos">${PROF_ICON.grid} Mis proyectos</a>` : ''}
+        <button role="menuitem" data-m="out" class="out">${PROF_ICON.out} Cerrar sesión</button>`;
+      document.body.appendChild(menu);
+      const r = av.getBoundingClientRect();
+      menu.style.top = (r.bottom + 8) + 'px';
+      menu.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+      av.setAttribute('aria-expanded', 'true');
+      menu.addEventListener('click', async (e) => {
+        const b = e.target.closest('button'); if (!b) return;
+        closeMenu();
+        if (b.dataset.m === 'pin') changePin();
+        else if (b.dataset.m === 'out') {
+          const ok = await confirm({ title: 'Cerrar sesión', message: '¿Seguro que quieres salir?', okText: 'Cerrar sesión' });
+          if (!ok) return;
+          await api('/api/auth/logout', { method: 'POST' });
+          location.href = '/';
+        }
+      });
+    }
+    av.addEventListener('click', (e) => { e.stopPropagation(); menu ? closeMenu() : openMenu(); });
+    av.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); menu ? closeMenu() : openMenu(); } });
+    document.addEventListener('click', (e) => { if (menu && !menu.contains(e.target)) closeMenu(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
+    window.addEventListener('resize', closeMenu);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAvatarMenu); else initAvatarMenu();
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch(() => {}); });
   }
 
-  return { toast, confirm, api, combo, theme: { get: getTheme, set: setTheme, cycle: cycleTheme, isDark } };
+  return { toast, confirm, api, combo, changePin, theme: { get: getTheme, set: setTheme, cycle: cycleTheme, isDark } };
 })();

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Inversión — yesnow</title>
+<meta name="theme-color" content="#0052ea">
+<link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+<link rel="apple-touch-icon" href="/icons/icon.svg">
+<link rel="manifest" href="/manifest.json">
+<link rel="stylesheet" href="/css/base.css">
+<style>
+:root{--time:#7c3aed;--time-bg:#efe6fd}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--time:#b794f6;--time-bg:#2a1b4a}}
+:root[data-theme="dark"]{--time:#b794f6;--time-bg:#2a1b4a}
+body{padding-bottom:60px}
+.appbar{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:10}
+.appbar .back{color:var(--text-dim);font-size:20px;line-height:1;border:0;background:none;padding:2px}
+.appbar h2{font-size:14.5px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.appbar .who{display:flex;align-items:center;gap:10px}
+.bell{position:relative;border:0;background:none;color:var(--text);padding:4px}
+.bell .dot{position:absolute;top:2px;right:2px;width:8px;height:8px;border-radius:50%;background:var(--danger);border:2px solid var(--surface);display:none}
+.bell .dot.on{display:block}
+.page{max-width:1060px;margin:0 auto;padding:16px}
+.pghead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.pghead h1{font-size:19px;flex:1;min-width:160px}
+.btn{border:1.5px solid var(--border);background:var(--surface);color:var(--text);border-radius:10px;padding:8px 13px;font-weight:700;font-size:13px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent-ink);color:#fff;box-shadow:0 2px 0 var(--accent-ink)}
+.btn.primary:active{transform:translateY(2px);box-shadow:none}
+.btn.danger{color:var(--danger);border-color:var(--danger-border)}
+.btn.small{padding:5px 10px;font-size:12px;border-radius:8px}
+.ib{border:1.5px solid var(--text-dim);background:var(--surface);color:var(--text);border-radius:8px;width:28px;height:28px;display:inline-grid;place-items:center;flex:none}
+.ib:hover{border-color:var(--accent);color:var(--accent)}
+.ib.del:hover{border-color:var(--danger);color:var(--danger)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:2px solid var(--border);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;min-width:0}
+.kpi .kl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim)}
+.kpi .kv{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:22px;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kpi .ks{font-size:11.5px;color:var(--text-dim);margin-top:4px}
+.kpi.time .kv{color:var(--time)}
+.kpi.fut{border-style:dashed}
+@media(max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:380px){.kpi .kv{font-size:18px}}
+
+.cols{display:grid;grid-template-columns:1.55fr 1fr;gap:16px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.card{background:var(--surface);border:2px solid var(--border);border-radius:14px;box-shadow:var(--shadow);min-width:0}
+.card+.card{margin-top:16px}
+.chead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:13px 16px;border-bottom:1px solid var(--border)}
+.chead h3{font-size:13.5px;flex:1;min-width:120px}
+.chead .sub{font-size:11.5px;color:var(--text-dim);width:100%;margin-top:-6px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface-2)}
+.filters select{width:auto;min-width:120px;max-width:100%;padding:6px 9px;font-size:12px;background:var(--surface)}
+select,input[type=text],input[type=number],input[type=date]{width:100%;border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:10px;padding:9px 11px;font-family:inherit;font-size:13px}
+select:focus,input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.formf label{display:block;font-size:11.5px;font-weight:700;margin-bottom:5px;color:var(--text-dim)}
+
+.mv{display:grid;grid-template-columns:66px 1fr auto auto;gap:12px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border)}
+.mv:last-child{border-bottom:0}
+.mv .d{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);line-height:1.3}
+.mv .d b{display:block;font-size:17px;color:var(--text)}
+.mv .t{min-width:0}
+.mv .t .c{font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mv .t .m{font-size:11.5px;color:var(--text-dim);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--surface-2);color:var(--text-dim);white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.chip.cat{background:var(--accent-soft);color:var(--accent-ink)}
+.amt{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;white-space:nowrap;text-align:right}
+.amt.time{color:var(--time)}
+.amt small{display:block;font-size:10px;color:var(--text-dim);font-weight:500}
+.mv .acts{display:flex;gap:4px}
+.empty{padding:22px 16px;text-align:center;color:var(--text-dim);font-size:13px}
+@media(max-width:560px){.mv{grid-template-columns:56px 1fr auto}.mv .acts{grid-column:2/4;justify-content:flex-end}}
+
+.seg{display:inline-grid;grid-auto-flow:column;gap:4px;background:var(--surface-2);padding:3px;border-radius:10px;border:1px solid var(--border)}
+.seg button{border:0;background:none;color:var(--text-dim);padding:6px 12px;border-radius:8px;font-weight:700;font-size:12px}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.seg.full{display:grid;grid-template-columns:1fr 1fr;width:100%}
+.rt{width:100%;border-collapse:collapse}
+.rt th{text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:.05em;font-weight:800;padding:8px 10px;color:var(--text-dim);border-bottom:1.5px solid var(--border);white-space:nowrap}
+.rt th:first-child,.rt td:first-child{text-align:left;padding-left:16px}
+.rt th:last-child,.rt td:last-child{padding-right:16px}
+.rt td{padding:9px 10px;border-bottom:1px solid var(--border);font-size:12.5px;text-align:right;white-space:nowrap}
+.rt td:first-child{font-weight:700;white-space:normal}
+.rt td.n{font-family:'IBM Plex Mono',monospace;font-size:12px}
+.rt tr:last-child td{border-bottom:0}
+.rt tfoot td{font-weight:800;background:var(--surface-2)}
+.scroll{overflow-x:auto}
+
+.fut{padding:12px 16px;border-bottom:1px solid var(--border);display:grid;gap:8px}
+.fut:last-child{border-bottom:0}
+.fut .top{display:flex;gap:10px;align-items:flex-start}
+.fut .top .t{flex:1;min-width:0}
+.fut .c{font-weight:700;font-size:13px}
+.fut .m{font-size:11.5px;color:var(--text-dim);margin-top:3px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.fut .acts{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.due{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--warn-bg);color:var(--warn)}
+.due.far{background:var(--surface-2);color:var(--text-dim)}
+.due.late{background:var(--danger-bg);color:var(--danger)}
+
+.bt-modal .bt-box.inv{max-width:460px;max-height:calc(100vh - 32px);overflow:auto;padding:22px}
+.formf{display:grid;gap:13px;text-align:left}
+.moneyrow{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:10px;align-items:start}
+@media(max-width:380px){.moneyrow{grid-template-columns:1fr}}
+.checks{display:flex;gap:14px;flex-wrap:wrap}
+.checks label{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--text);margin:0}
+.hint{font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.35}
+.spread{display:flex;justify-content:space-between;gap:10px;margin-top:18px}
+.spread span{display:flex;gap:10px}
+[hidden]{display:none!important}
+.empty-mini{color:var(--text-dim);font-size:12.5px;padding:20px 2px;text-align:center}
+</style>
+</head>
+<body>
+<div class="appbar">
+  <a class="back" id="backLink" href="#">‹</a>
+  <h2 id="pTitle">Cargando…</h2>
+  <div class="who">
+    <button class="theme-toggle" data-theme-toggle aria-label="Cambiar tema"></button>
+    <button class="bell" id="btnBell"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="dot" id="bellDot"></span></button>
+    <div class="avatar" id="meAvatar">··</div>
+  </div>
+</div>
+<div class="subnav">
+  <a id="navDash">Dashboard</a>
+  <a id="navGantt">Gantt</a>
+  <a id="navCheck">Checklist</a>
+</div>
+
+<div class="page" id="view"><div class="empty-mini">Cargando…</div></div>
+
+<script src="/js/app.js"></script>
+<script src="/js/grupos.js"></script>
+<script>
+(function(){
+  const proyectoId = location.pathname.split('/').filter(Boolean)[1];
+  const base = '/api/proyectos/' + proyectoId;
+  let me = null, usuarios = [], tareas = [], movs = [];
+  let f = { tipo: 'todos', cat: 'todas', quien: 'todos' }, groupBy = 'categoria';
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  const SVG = {
+    edit: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
+    del: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>',
+  };
+
+  // ---------- formato ----------
+  const fmtN = (n, d = 0) => n.toLocaleString('es-CL', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const money = (n, mon) => mon === 'USD' ? 'US$ ' + fmtN(n, 2) : '$' + fmtN(n);
+  const hrs = (n) => fmtN(n, Number.isInteger(n) ? 0 : 1) + ' h';
+  const MES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'], DIA = ['dom','lun','mar','mié','jue','vie','sáb'];
+  const pd = (s) => new Date(String(s).slice(0, 10) + 'T12:00:00');
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); };
+  const dshort = (s) => { const d = pd(s); return `<b>${d.getDate()}</b>${MES[d.getMonth()]} · ${DIA[d.getDay()]}`; };
+  const dlong = (s) => { const d = pd(s); return `${DIA[d.getDay()]} ${d.getDate()} ${MES[d.getMonth()]}`; };
+  const tareaOf = (id) => tareas.find(t => t.id === id);
+  const faseDe = (m) => { const t = tareaOf(m.tareaId); return t ? (t.fase || 'Sin fase') : 'Sin tarea'; };
+  const nombres = (m) => m.personas.map(p => p.nombre);
+
+  const reals = () => movs.filter(m => m.estado === 'real');
+  const plans = () => movs.filter(m => m.estado === 'plan');
+  function totals(list){
+    const t = { hp: 0, reloj: 0, CLP: 0, USD: 0 };
+    list.forEach(m => { if (m.tipo === 'tiempo') { t.hp += m.cantidad * Math.max(1, m.personas.length); t.reloj += m.cantidad; } else t[m.moneda] += m.cantidad; });
+    return t;
+  }
+  function futTotals(){
+    const t = { h: 0, CLP: 0, USD: 0 };
+    plans().forEach(p => { if (p.tipo === 'tiempo') t.h += p.cantidad; else t[p.moneda] += p.cantidad; });
+    return t;
+  }
+  const catOptions = () => [...new Set([...BT.grupos.inversion, ...movs.map(m => m.categoria)])];
+  const openCatsManager = () => BT.manageGroups({
+    kind: 'inversion', proyectoId,
+    miembros: () => movs.map(m => ({ id: m.id, nombre: m.concepto, categoria: m.categoria })),
+    reload: async () => { await loadMovs(); draw(); },
+  });
+
+  // ---------- carga ----------
+  async function loadMovs(){
+    const [d] = await Promise.all([BT.api(base + '/inversion'), BT.loadGrupos(proyectoId)]);
+    movs = d.movimientos;
+  }
+  async function init(){
+    let meRes, proyRes, usRes, tRes;
+    try {
+      [meRes, proyRes, usRes, tRes] = await Promise.all([BT.api('/api/auth/me'), BT.api('/api/proyectos/' + proyectoId), BT.api('/api/auth/usuarios'), BT.api(base + '/tareas')]);
+    } catch (e) { location.href = '/'; return; }
+    me = meRes.usuario; usuarios = usRes.usuarios; tareas = tRes.tareas;
+    $('#meAvatar').textContent = me.nombre.slice(0, 2).toUpperCase();
+    $('#meAvatar').className = 'avatar ' + me.avatar_color;
+    $('#pTitle').textContent = proyRes.proyecto.nombre;
+    document.title = 'Inversión — ' + proyRes.proyecto.nombre;
+    $('#backLink').href = '/proyecto/' + proyectoId;
+    $('#navDash').href = '/proyecto/' + proyectoId;
+    $('#navGantt').href = '/proyecto/' + proyectoId + '/gantt';
+    $('#navCheck').href = '/proyecto/' + proyectoId + '/checklist';
+    refreshBell();
+    try { await loadMovs(); } catch (e) { $('#view').innerHTML = '<div class="empty-mini">No se pudo cargar la inversión.</div>'; return; }
+    draw();
+  }
+  async function refreshBell(){
+    try { const d = await BT.api('/api/notificaciones/no-leidas'); $('#bellDot').classList.toggle('on', d.count > 0); } catch (e) {}
+  }
+  async function refresh(){ await loadMovs(); draw(); }
+
+  // ---------- formulario (movimiento real o gasto futuro) ----------
+  // kind: 'real' | 'plan'. data: movimiento existente o plantilla (sin id = nuevo).
+  function openForm(kind, data, opts){
+    opts = opts || {};
+    const isPlan = kind === 'plan', isNew = !data.id;
+    let tipo = data.tipo || 'dinero', mon = data.moneda || 'CLP';
+    const title = isPlan ? (isNew ? 'Nuevo gasto futuro' : 'Editar gasto futuro') : (opts.pagar ? (tipo === 'tiempo' ? 'Marcar como hecho' : 'Registrar pago') : (isNew ? 'Registrar inversión' : 'Editar movimiento'));
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box inv"><h3>${title}</h3>
+      <div class="formf">
+        <div><label>Tipo</label><div class="seg full" id="fTipo"><button type="button" data-v="dinero">Dinero</button><button type="button" data-v="tiempo">Tiempo</button></div></div>
+        <div><label for="fFecha">${isPlan ? 'Fecha estimada' : 'Fecha'}</label><input id="fFecha" type="date" value="${esc(data.fecha ? String(data.fecha).slice(0, 10) : todayStr())}"></div>
+        <div id="gDinero" class="moneyrow"><div><label for="fMonto">Monto</label><input id="fMonto" type="number" min="0" step="any" value="${data.tipo === 'dinero' ? data.cantidad : ''}" placeholder="0"></div>
+          <div><label>Moneda</label><div class="seg full" id="fMon"><button type="button" data-v="CLP">CLP</button><button type="button" data-v="USD">USD</button></div></div></div>
+        <div id="gTiempo"><label for="fHoras">Duración (horas)</label><input id="fHoras" type="number" min="0" step="0.25" value="${data.tipo === 'tiempo' ? data.cantidad : ''}" placeholder="Ej: 2,5"></div>
+        <div id="gQuien"><label id="lQuien"></label><div class="checks" id="fQuien">${usuarios.map(u => `<label><input type="checkbox" value="${u.id}"> ${esc(u.nombre)}</label>`).join('')}</div><div class="hint" id="hQuien"></div></div>
+        <div><label>Categoría *</label><div class="bt-fieldrow"><div id="fCat"></div><button type="button" class="bt-gear" id="fGear" title="Gestionar categorías" aria-label="Gestionar categorías"></button></div></div>
+        <div><label for="fConc">Concepto *</label><input id="fConc" type="text" autocomplete="off" placeholder="Ej: Reunión del domingo, 2 suscripciones de Claude" value="${esc(data.concepto || '')}"></div>
+        <div><label for="fTarea">Tarea de la Gantt (opcional)</label><select id="fTarea"><option value="">Sin tarea</option>${tareas.map(t => `<option value="${t.id}" ${data.tareaId === t.id ? 'selected' : ''}>${esc(t.nombre)} — ${esc(t.fase || 'Sin fase')}</option>`).join('')}</select><div class="hint">La fase se toma de la tarea.</div></div>
+      </div>
+      <div class="spread"><span>${!isNew && !opts.pagar ? '<button class="btn danger" id="fDel">Eliminar</button>' : ''}</span><span><button class="btn" id="fCancel">Cancelar</button><button class="btn primary" id="fOk">${opts.pagar ? 'Registrar' : 'Guardar'}</button></span></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const q = (s) => wrap.querySelector(s);
+    const close = () => wrap.remove();
+    q('.bt-backdrop').onclick = close; q('#fCancel').onclick = close;
+    const cb = BT.combo(q('#fCat'), { value: data.categoria || '', getOptions: catOptions, noun: 'categoría' });
+    const g = q('#fGear'); g.innerHTML = BT.gearIcon; g.onclick = openCatsManager;
+    const sel = (data.personas || []).map(p => p.id);
+    const preset = sel.length ? sel : (isPlan ? [] : [me.id]);
+    $$('#fQuien input', wrap).forEach(c => { c.checked = preset.includes(c.value); });
+    function sync(){
+      $$('#fTipo button', wrap).forEach(b => b.classList.toggle('on', b.dataset.v === tipo));
+      $$('#fMon button', wrap).forEach(b => b.classList.toggle('on', b.dataset.v === mon));
+      q('#gDinero').hidden = tipo !== 'dinero'; q('#gTiempo').hidden = tipo !== 'tiempo';
+      q('#lQuien').textContent = tipo === 'tiempo' ? 'Quiénes participaron' : (isPlan ? 'Quién pagará (opcional)' : 'Quién pagó');
+      q('#hQuien').textContent = tipo === 'tiempo' ? 'Las horas cuentan para cada participante (4 h con 2 personas = 8 h-persona).' : '';
+      q('#gQuien').hidden = isPlan && tipo === 'tiempo';
+    }
+    $$('#fTipo button', wrap).forEach(b => b.onclick = () => { tipo = b.dataset.v; sync(); });
+    $$('#fMon button', wrap).forEach(b => b.onclick = () => { mon = b.dataset.v; sync(); });
+    sync();
+    const del = q('#fDel');
+    if (del) del.onclick = async () => {
+      const ok = await BT.confirm({ title: 'Eliminar', message: '¿Eliminar «' + data.concepto + '»?', okText: 'Eliminar', danger: true });
+      if (!ok) return;
+      try { await BT.api(base + '/inversion/' + data.id, { method: 'DELETE' }); close(); BT.toast('Eliminado'); refresh(); } catch (e) { BT.toast('Error: ' + e.message); }
+    };
+    q('#fOk').onclick = async () => {
+      const cantidad = parseFloat(q(tipo === 'dinero' ? '#fMonto' : '#fHoras').value), categoria = cb.value, concepto = q('#fConc').value.trim();
+      const personas = $$('#fQuien input:checked', wrap).map(c => c.value);
+      if (!(cantidad > 0)) return BT.toast(tipo === 'dinero' ? 'Ingresa un monto mayor a cero' : 'Ingresa las horas');
+      if (!categoria) return BT.toast('Elige o crea una categoría');
+      if (!concepto) return BT.toast('Escribe un concepto');
+      if (!isPlan && !personas.length) return BT.toast(tipo === 'tiempo' ? 'Marca quiénes participaron' : 'Indica quién pagó');
+      const body = {
+        estado: isPlan ? 'plan' : 'real', tipo, cantidad, moneda: tipo === 'dinero' ? mon : undefined,
+        categoria, concepto, fecha: q('#fFecha').value || todayStr(), personas: (isPlan && tipo === 'tiempo') ? [] : personas,
+        tareaId: q('#fTarea').value || null,
+      };
+      try {
+        if (opts.pagarId) await BT.api(base + '/inversion/' + opts.pagarId, { method: 'PATCH', body: JSON.stringify(body) });
+        else if (isNew) await BT.api(base + '/inversion', { method: 'POST', body: JSON.stringify(body) });
+        else await BT.api(base + '/inversion/' + data.id, { method: 'PATCH', body: JSON.stringify(body) });
+        close();
+        BT.toast(opts.pagar ? 'Pasó al registro de inversión' : (isPlan ? (isNew ? 'Gasto futuro agregado' : 'Guardado') : (isNew ? 'Registrado' : 'Guardado')));
+        refresh();
+      } catch (e) { BT.toast('Error: ' + e.message); }
+    };
+    q('#fMonto').focus();
+  }
+
+  // ---------- vista ----------
+  function draw(){
+    const R = reals(), P = plans();
+    const rows = R.filter(m => (f.tipo === 'todos' || m.tipo === f.tipo) && (f.cat === 'todas' || m.categoria === f.cat) && (f.quien === 'todos' || m.personas.some(p => p.id === f.quien)));
+    const T = totals(R), FT = futTotals();
+    const mvHtml = rows.map(m => `<div class="mv" data-id="${m.id}">
+      <div class="d">${dshort(m.fecha)}</div>
+      <div class="t"><div class="c" title="${esc(m.concepto)}">${esc(m.concepto)}</div>
+        <div class="m"><span class="chip cat">${esc(m.categoria)}</span>${m.tareaId && tareaOf(m.tareaId) ? `<span class="chip" title="${esc(tareaOf(m.tareaId).nombre)}">${esc(faseDe(m))} · ${esc(tareaOf(m.tareaId).nombre)}</span>` : ''}<span>${m.tipo === 'tiempo' ? nombres(m).join(' y ') : 'Pagó ' + nombres(m).join(', ')}</span></div></div>
+      <div class="amt ${m.tipo === 'tiempo' ? 'time' : ''}">${m.tipo === 'tiempo' ? hrs(m.cantidad) + (m.personas.length > 1 ? `<small>${hrs(m.cantidad * m.personas.length)}-persona</small>` : '') : money(m.cantidad, m.moneda)}</div>
+      <div class="acts"><button class="ib" data-edit="${m.id}" aria-label="Editar">${SVG.edit}</button><button class="ib del" data-del="${m.id}" aria-label="Eliminar">${SVG.del}</button></div></div>`).join('');
+
+    const futHtml = P.slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))).map(p => {
+      const days = Math.round((pd(p.fecha) - pd(todayStr())) / 864e5);
+      const cls = days < 0 ? 'late' : (days > 30 ? 'far' : '');
+      return `<div class="fut" data-pid="${p.id}"><div class="top"><div class="t"><div class="c">${esc(p.concepto)}</div>
+        <div class="m"><span class="chip cat">${esc(p.categoria)}</span><span class="due ${cls}">${dlong(p.fecha)} · ${days < 0 ? 'vencido' : days === 0 ? 'hoy' : 'en ' + days + ' d'}</span></div></div>
+        <div class="amt ${p.tipo === 'tiempo' ? 'time' : ''}">${p.tipo === 'tiempo' ? hrs(p.cantidad) : money(p.cantidad, p.moneda)}</div></div>
+        <div class="acts"><button class="btn small primary" data-pay="${p.id}">${p.tipo === 'tiempo' ? 'Marcar como hecho' : 'Marcar como pagado'}</button><button class="ib" data-pedit="${p.id}" aria-label="Editar">${SVG.edit}</button><button class="ib del" data-pdel="${p.id}" aria-label="Eliminar">${SVG.del}</button></div></div>`;
+    }).join('');
+
+    const keyOf = { categoria: m => [m.categoria], persona: m => nombres(m), fase: m => [faseDe(m)] }[groupBy];
+    const g = {};
+    R.forEach(m => keyOf(m).forEach(k => {
+      g[k] = g[k] || { hp: 0, CLP: 0, USD: 0 };
+      const n = Math.max(1, m.personas.length);
+      if (m.tipo === 'tiempo') g[k].hp += groupBy === 'persona' ? m.cantidad : m.cantidad * n;
+      else g[k][m.moneda] += (groupBy === 'persona' && n > 1) ? m.cantidad / n : m.cantidad;
+    }));
+    const grows = Object.entries(g).sort((a, b) => (b[1].CLP + b[1].USD * 950) - (a[1].CLP + a[1].USD * 950) || b[1].hp - a[1].hp);
+    const sumHtml = grows.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="n">${v.hp ? hrs(v.hp) : '—'}</td><td class="n">${v.CLP ? money(Math.round(v.CLP), 'CLP') : '—'}</td><td class="n">${v.USD ? money(v.USD, 'USD') : '—'}</td></tr>`).join('');
+
+    $('#view').innerHTML = `
+      <div class="pghead"><h1>Inversión</h1><button class="btn primary" id="bAdd">+ Registrar</button></div>
+      <div class="kpis">
+        <div class="kpi time"><div class="kl">Tiempo invertido</div><div class="kv">${hrs(T.hp)}</div><div class="ks">${hrs(T.reloj)} de reloj · horas-persona</div></div>
+        <div class="kpi"><div class="kl">Dinero · CLP</div><div class="kv">${money(T.CLP, 'CLP')}</div><div class="ks">pesos chilenos</div></div>
+        <div class="kpi"><div class="kl">Dinero · USD</div><div class="kv">${money(T.USD, 'USD')}</div><div class="ks">dólares</div></div>
+        <div class="kpi fut"><div class="kl">Comprometido a futuro</div><div class="kv" style="font-size:15px;line-height:1.5;white-space:normal">${FT.CLP ? money(FT.CLP, 'CLP') : ''}${FT.CLP && FT.USD ? '<br>' : ''}${FT.USD ? money(FT.USD, 'USD') : ''}${!FT.CLP && !FT.USD ? '—' : ''}</div><div class="ks">${FT.h ? hrs(FT.h) + ' planificadas · ' : ''}${P.length} pendiente${P.length === 1 ? '' : 's'}</div></div>
+      </div>
+      <div class="cols">
+        <div>
+          <div class="card"><div class="chead"><h3>Registro de inversión</h3></div>
+            <div class="filters">
+              <select id="fTipoSel" aria-label="Tipo"><option value="todos">Todo</option><option value="tiempo" ${f.tipo === 'tiempo' ? 'selected' : ''}>Tiempo</option><option value="dinero" ${f.tipo === 'dinero' ? 'selected' : ''}>Dinero</option></select>
+              <select id="fCatSel" aria-label="Categoría"><option value="todas">Todas las categorías</option>${catOptions().map(c => `<option value="${esc(c)}" ${f.cat === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select>
+              <select id="fQuienSel" aria-label="Persona"><option value="todos">Todas las personas</option>${usuarios.map(u => `<option value="${u.id}" ${f.quien === u.id ? 'selected' : ''}>${esc(u.nombre)}</option>`).join('')}</select>
+              <button class="bt-gear" id="bGear" title="Gestionar categorías" aria-label="Gestionar categorías" style="width:30px;height:30px"></button></div>
+            ${mvHtml || `<div class="empty">${R.length ? 'No hay movimientos con estos filtros.' : 'Aún no registras inversión. Usa «+ Registrar» para anotar horas o gastos.'}</div>`}</div>
+          <div class="card"><div class="chead"><h3>Resumen</h3><div class="seg" id="gSeg"><button data-g="categoria" class="${groupBy === 'categoria' ? 'on' : ''}">Categoría</button><button data-g="persona" class="${groupBy === 'persona' ? 'on' : ''}">Persona</button><button data-g="fase" class="${groupBy === 'fase' ? 'on' : ''}">Fase</button></div></div>
+            <div class="scroll"><table class="rt"><thead><tr><th>${groupBy === 'categoria' ? 'Categoría' : groupBy === 'persona' ? 'Persona' : 'Fase (por tarea)'}</th><th>Tiempo</th><th>CLP</th><th>USD</th></tr></thead><tbody>${sumHtml || '<tr><td colspan="4" class="empty">Sin datos todavía.</td></tr>'}</tbody><tfoot><tr><td>Total</td><td class="n">${hrs(T.hp)}</td><td class="n">${money(T.CLP, 'CLP')}</td><td class="n">${money(T.USD, 'USD')}</td></tr></tfoot></table></div></div>
+        </div>
+        <div class="card"><div class="chead"><h3>Gastos futuros</h3><button class="btn small" id="bAddFut">+ Agregar</button><span class="sub">Lo que viene. Al pagarlo pasa al registro.</span></div>
+          ${futHtml || '<div class="empty">No hay gastos planificados. Agrega lo que sabes que vas a pagar.</div>'}</div>
+      </div>`;
+    const gb = $('#bGear'); gb.innerHTML = BT.gearIcon; gb.onclick = openCatsManager;
+    $('#bAdd').onclick = () => openForm('real', {});
+    $('#bAddFut').onclick = () => openForm('plan', {});
+    $('#fTipoSel').onchange = (e) => { f.tipo = e.target.value; draw(); };
+    $('#fCatSel').onchange = (e) => { f.cat = e.target.value; draw(); };
+    $('#fQuienSel').onchange = (e) => { f.quien = e.target.value; draw(); };
+    $$('#gSeg button').forEach(b => b.onclick = () => { groupBy = b.dataset.g; draw(); });
+    const byId = (id) => movs.find(m => m.id === id);
+    $$('[data-edit]').forEach(b => b.onclick = () => openForm('real', byId(b.dataset.edit)));
+    $$('[data-del]').forEach(b => b.onclick = async () => {
+      const m = byId(b.dataset.del);
+      const ok = await BT.confirm({ title: 'Eliminar movimiento', message: '¿Eliminar «' + m.concepto + '» del registro?', okText: 'Eliminar', danger: true });
+      if (!ok) return;
+      try { await BT.api(base + '/inversion/' + m.id, { method: 'DELETE' }); BT.toast('Movimiento eliminado'); refresh(); } catch (e) { BT.toast('Error: ' + e.message); }
+    });
+    $$('[data-pedit]').forEach(b => b.onclick = () => openForm('plan', byId(b.dataset.pedit)));
+    $$('[data-pdel]').forEach(b => b.onclick = async () => {
+      const p = byId(b.dataset.pdel);
+      const ok = await BT.confirm({ title: 'Eliminar gasto futuro', message: '¿Eliminar «' + p.concepto + '»?', okText: 'Eliminar', danger: true });
+      if (!ok) return;
+      try { await BT.api(base + '/inversion/' + p.id, { method: 'DELETE' }); BT.toast('Gasto futuro eliminado'); refresh(); } catch (e) { BT.toast('Error: ' + e.message); }
+    });
+    // "Marcar como pagado": abre el formulario con los datos del gasto futuro y, al guardar, lo pasa a real.
+    $$('[data-pay]').forEach(b => b.onclick = () => {
+      const p = byId(b.dataset.pay);
+      openFormPay(p);
+    });
+  }
+  function openFormPay(p){
+    // El gasto futuro se abre como un registro real (fecha de hoy, quien paga = tú); al guardar, el mismo movimiento pasa a real.
+    const draft = Object.assign({}, p, { id: undefined, fecha: todayStr(), personas: [{ id: me.id, nombre: me.nombre }] });
+    openForm('real', draft, { pagar: true, pagarId: p.id });
+  }
+
+  $('#btnBell').addEventListener('click', async () => {
+    const d = await BT.api('/api/notificaciones');
+    const wrap = document.createElement('div');
+    wrap.className = 'bt-modal';
+    wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box" style="max-width:400px">
+      <h3>Notificaciones</h3>
+      <div style="max-height:340px;overflow-y:auto">${d.notificaciones.length ? d.notificaciones.map(n => `
+        <div style="padding:9px 0;border-bottom:1px solid var(--border);font-size:12.5px">${n.mensaje}<div style="font-size:10.5px;color:var(--text-dim);margin-top:3px">${n.proyectoNombre || ''}</div></div>
+      `).join('') : '<div class="empty-mini">Sin notificaciones todavía.</div>'}</div>
+      <div class="bt-actions" style="margin-top:14px"><button class="primary ok">Cerrar</button></div>
+    </div>`;
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.querySelector('.bt-backdrop').onclick = close;
+    wrap.querySelector('.ok').onclick = close;
+    await BT.api('/api/notificaciones/marcar-leidas', { method: 'POST' });
+    $('#bellDot').classList.remove('on');
+  });
+
+  init();
+})();
+</script>
+</body>
+</html>

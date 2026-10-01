@@ -44,6 +44,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 app.get('/proyectos', (req, res) => res.sendFile(path.join(__dirname, 'public', 'proyectos', 'index.html')));
 app.get('/proyecto/:id', (req, res) => res.sendFile(path.join(__dirname, 'public', 'proyecto', 'index.html')));
 app.get('/proyecto/:id/gantt', (req, res) => res.sendFile(path.join(__dirname, 'public', 'proyecto', 'gantt.html')));
+app.get('/proyecto/:id/inversion', (req, res) => res.sendFile(path.join(__dirname, 'public', 'proyecto', 'inversion.html')));
 app.get('/proyecto/:id/checklist', (req, res) => res.sendFile(path.join(__dirname, 'public', 'proyecto', 'checklist.html')));
 
 if (require.main === module) {

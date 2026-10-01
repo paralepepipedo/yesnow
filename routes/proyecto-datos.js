@@ -14,6 +14,7 @@ async function notificar(usuarioId, tipo, mensaje, proyectoId, tareaId) {
 const TIPOS = {
   fase: { tabla: 'bitacora_tareas', col: 'fase' },
   categoria: { tabla: 'bitacora_checklist_items', col: 'categoria' },
+  inversion: { tabla: 'bitacora_inversion', col: 'categoria' },
 };
 
 // Registra la fase/categoría en el catálogo si aún no existe (sin distinguir mayúsculas).
@@ -59,6 +60,7 @@ router.get('/grupos', isAuth, async (req, res) => {
     res.json({
       fases: rows.filter(r => r.tipo === 'fase').map(r => r.nombre),
       categorias: rows.filter(r => r.tipo === 'categoria').map(r => r.nombre),
+      inversion: rows.filter(r => r.tipo === 'inversion').map(r => r.nombre),
     });
   } catch (e) { console.error('[GET grupos]', e); res.status(500).json({ error: 'Error interno' }); }
 });
@@ -112,6 +114,13 @@ router.delete('/grupos', isAuth, async (req, res) => {
     await client.query('BEGIN');
     if (tipo === 'fase') {
       await client.query('UPDATE bitacora_tareas SET fase = NULL WHERE proyecto_id = $1 AND fase = $2', [req.params.id, nombre]);
+    } else if (tipo === 'inversion') {
+      const { rows } = await client.query('SELECT count(*)::int AS n FROM bitacora_inversion WHERE proyecto_id = $1 AND categoria = $2', [req.params.id, nombre]);
+      if (rows[0].n > 0) {
+        if (nombre.toLowerCase() === 'otros') { await client.query('ROLLBACK'); return res.status(409).json({ error: 'La categoría «Otros» tiene movimientos' }); }
+        await client.query("INSERT INTO bitacora_grupos (proyecto_id, tipo, nombre) VALUES ($1,'inversion','Otros') ON CONFLICT DO NOTHING", [req.params.id]);
+        await client.query("UPDATE bitacora_inversion SET categoria = 'Otros' WHERE proyecto_id = $1 AND categoria = $2", [req.params.id, nombre]);
+      }
     } else {
       const { rows } = await client.query('SELECT count(*)::int AS n FROM bitacora_checklist_items WHERE proyecto_id = $1 AND categoria = $2', [req.params.id, nombre]);
       if (rows[0].n > 0) { await client.query('ROLLBACK'); return res.status(409).json({ error: 'La categoría tiene ítems' }); }
@@ -311,4 +320,85 @@ router.delete('/checklist/:itemId', isAuth, async (req, res) => {
   res.json({ success: true });
 });
 
+// ---- inversión (tiempo y dinero) ----
+const INV_SELECT = `SELECT i.*, array(
+    SELECT jsonb_build_object('id', u.id, 'nombre', u.nombre, 'avatar_color', u.avatar_color)
+    FROM bitacora_usuarios u WHERE u.id = ANY(i.personas)
+  ) AS personas_info FROM bitacora_inversion i`;
+const mapInv = (r) => ({
+  id: r.id, estado: r.estado, tipo: r.tipo, cantidad: Number(r.cantidad), moneda: r.moneda,
+  categoria: r.categoria, concepto: r.concepto, fecha: r.fecha, personas: r.personas_info || [], tareaId: r.tarea_id,
+});
+const FECHA_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+router.get('/inversion', isAuth, async (req, res) => {
+  try {
+    const { rows } = await db.query(`${INV_SELECT} WHERE i.proyecto_id = $1 ORDER BY i.fecha DESC, i.creado_en DESC`, [req.params.id]);
+    res.json({ movimientos: rows.map(mapInv) });
+  } catch (e) { console.error('[GET inversion]', e); res.status(500).json({ error: 'Error interno' }); }
+});
+
+router.post('/inversion', isAuth, async (req, res) => {
+  const b = req.body || {};
+  const estado = b.estado === 'plan' ? 'plan' : 'real';
+  const cantidad = Number(b.cantidad);
+  if (!['tiempo', 'dinero'].includes(b.tipo)) return res.status(400).json({ error: 'Tipo inválido' });
+  if (!(cantidad > 0)) return res.status(400).json({ error: 'La cantidad debe ser mayor a cero' });
+  if (b.tipo === 'dinero' && !['CLP', 'USD'].includes(b.moneda)) return res.status(400).json({ error: 'Moneda inválida' });
+  if (!b.categoria || !String(b.categoria).trim()) return res.status(400).json({ error: 'Falta la categoría' });
+  if (!b.concepto || !String(b.concepto).trim()) return res.status(400).json({ error: 'Falta el concepto' });
+  if (!FECHA_RE.test(b.fecha || '')) return res.status(400).json({ error: 'Fecha inválida' });
+  const personas = Array.isArray(b.personas) ? b.personas : [];
+  if (estado === 'real' && !personas.length) return res.status(400).json({ error: 'Indica quién participó o pagó' });
+  try {
+    const { rows } = await db.query(
+      `INSERT INTO bitacora_inversion (proyecto_id, estado, tipo, cantidad, moneda, categoria, concepto, fecha, personas, tarea_id, creado_por)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+      [req.params.id, estado, b.tipo, cantidad, b.tipo === 'dinero' ? b.moneda : null, String(b.categoria).trim(), String(b.concepto).trim(),
+       b.fecha, personas, b.tareaId || null, req.session.usuario.id]
+    );
+    await asegurarGrupo(req.params.id, 'inversion', b.categoria);
+    const { rows: full } = await db.query(`${INV_SELECT} WHERE i.id = $1`, [rows[0].id]);
+    res.json({ movimiento: mapInv(full[0]) });
+  } catch (e) { console.error('[POST inversion]', e); res.status(500).json({ error: 'Error interno' }); }
+});
+
+router.patch('/inversion/:movId', isAuth, async (req, res) => {
+  const b = req.body || {};
+  const sets = []; const vals = []; let i = 1;
+  const add = (col, v) => { sets.push(`${col} = $${i++}`); vals.push(v); };
+  if (b.estado !== undefined) { if (!['real', 'plan'].includes(b.estado)) return res.status(400).json({ error: 'Estado inválido' }); add('estado', b.estado); }
+  if (b.tipo !== undefined) {
+    if (!['tiempo', 'dinero'].includes(b.tipo)) return res.status(400).json({ error: 'Tipo inválido' });
+    if (b.tipo === 'dinero' && !['CLP', 'USD'].includes(b.moneda)) return res.status(400).json({ error: 'Moneda inválida' });
+    add('tipo', b.tipo); add('moneda', b.tipo === 'dinero' ? b.moneda : null);
+  } else if (b.moneda !== undefined) {
+    if (!['CLP', 'USD'].includes(b.moneda)) return res.status(400).json({ error: 'Moneda inválida' });
+    add('moneda', b.moneda);
+  }
+  if (b.cantidad !== undefined) { if (!(Number(b.cantidad) > 0)) return res.status(400).json({ error: 'La cantidad debe ser mayor a cero' }); add('cantidad', Number(b.cantidad)); }
+  if (b.categoria !== undefined) { if (!String(b.categoria).trim()) return res.status(400).json({ error: 'Falta la categoría' }); add('categoria', String(b.categoria).trim()); }
+  if (b.concepto !== undefined) { if (!String(b.concepto).trim()) return res.status(400).json({ error: 'Falta el concepto' }); add('concepto', String(b.concepto).trim()); }
+  if (b.fecha !== undefined) { if (!FECHA_RE.test(b.fecha)) return res.status(400).json({ error: 'Fecha inválida' }); add('fecha', b.fecha); }
+  if (b.personas !== undefined) add('personas', Array.isArray(b.personas) ? b.personas : []);
+  if (b.tareaId !== undefined) add('tarea_id', b.tareaId || null);
+  if (!sets.length) return res.status(400).json({ error: 'Nada que actualizar' });
+  vals.push(req.params.movId, req.params.id);
+  try {
+    const { rows } = await db.query(
+      `UPDATE bitacora_inversion SET ${sets.join(', ')}, actualizado_en = now() WHERE id = $${i++} AND proyecto_id = $${i} RETURNING id, categoria`, vals
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
+    if (b.categoria) await asegurarGrupo(req.params.id, 'inversion', rows[0].categoria);
+    const { rows: full } = await db.query(`${INV_SELECT} WHERE i.id = $1`, [rows[0].id]);
+    res.json({ movimiento: mapInv(full[0]) });
+  } catch (e) { console.error('[PATCH inversion]', e); res.status(500).json({ error: 'Error interno' }); }
+});
+
+router.delete('/inversion/:movId', isAuth, async (req, res) => {
+  await db.query('DELETE FROM bitacora_inversion WHERE id = $1 AND proyecto_id = $2', [req.params.movId, req.params.id]);
+  res.json({ success: true });
+});
+
 module.exports = router;
+

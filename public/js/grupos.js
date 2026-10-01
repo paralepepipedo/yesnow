@@ -11,11 +11,11 @@
   };
   const GEAR = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 
-  BT.grupos = { fases: [], categorias: [] };
+  BT.grupos = { fases: [], categorias: [], inversion: [] };
   BT.gearIcon = GEAR;
   BT.loadGrupos = async (proyectoId) => {
     const d = await BT.api('/api/proyectos/' + proyectoId + '/grupos');
-    BT.grupos = { fases: d.fases || [], categorias: d.categorias || [] };
+    BT.grupos = { fases: d.fases || [], categorias: d.categorias || [], inversion: d.inversion || [] };
     return BT.grupos;
   };
 
@@ -23,7 +23,9 @@
   BT.manageGroups = function(opts){
     const { kind, proyectoId, miembros, reload } = opts;
     const isFase = kind === 'fase';
-    const K = isFase
+    const K = kind === 'inversion'
+      ? { title: 'Gestionar categorías', noun: 'categoría', unit: ['movimiento', 'movimientos'], key: 'categoria', path: '/inversion/', field: 'categoria', list: () => BT.grupos.inversion, none: false, toOtros: true }
+      : isFase
       ? { title: 'Gestionar fases', noun: 'fase', unit: ['tarea', 'tareas'], key: 'fase', path: '/tareas/', field: 'fase', list: () => BT.grupos.fases, none: true }
       : { title: 'Gestionar categorías', noun: 'categoría', unit: ['ítem', 'ítems'], key: 'categoria', path: '/checklist/', field: 'categoria', list: () => BT.grupos.categorias, none: false };
     const base = '/api/proyectos/' + proyectoId;
@@ -58,8 +60,9 @@
         extra = `<div class="bt-cf"><span>Ya existe «${esc(to)}». ¿Unir «${esc(n)}» con «${esc(to)}»? Sus ${K.unit[1]} pasarán a «${esc(to)}».</span><div><button class="bt-mgb primary" data-a="domerge">Unir</button><button class="bt-mgb" data-a="cancel">Cancelar</button></div></div>`;
       }
       if (st.del === i) {
-        extra = (isFase || mem.length === 0)
-          ? `<div class="bt-cf d"><span>${mem.length ? (mem.length === 1 ? `Su ${K.unit[0]} pasará a «Sin fase». Nada se borra.` : `Sus ${mem.length} ${K.unit[1]} pasarán a «Sin fase». Nada se borra.`) : `La ${K.noun} está vacía.`} ¿Eliminar «${esc(n)}»?</span><div><button class="bt-mgb danger" data-a="dodel">Eliminar</button><button class="bt-mgb" data-a="cancel">Cancelar</button></div></div>`
+        const destino = K.toOtros ? 'Otros' : 'Sin fase';
+        extra = (isFase || K.toOtros || mem.length === 0)
+          ? `<div class="bt-cf d"><span>${mem.length ? (mem.length === 1 ? `Su ${K.unit[0]} pasará a «${destino}». Nada se borra.` : `Sus ${mem.length} ${K.unit[1]} pasarán a «${destino}». Nada se borra.`) : `La ${K.noun} está vacía.`} ¿Eliminar «${esc(n)}»?</span><div><button class="bt-mgb danger" data-a="dodel">Eliminar</button><button class="bt-mgb" data-a="cancel">Cancelar</button></div></div>`
           : `<div class="bt-cf d"><span>«${esc(n)}» tiene ${mem.length} ${K.unit[mem.length === 1 ? 0 : 1]}. Despliega la fila para moverlos a otra ${K.noun}, o renómbrala con el nombre de otra para unirlas.</span><div><button class="bt-mgb" data-a="cancel">Entendido</button></div></div>`;
       }
       let list = '';

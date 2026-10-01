@@ -172,3 +172,47 @@ svg{display:block}
 .bt-fieldrow>.bt-combo{flex:1;min-width:0}
 
 @media (max-width:520px){.bt-mh .bt-nm{white-space:normal;line-height:1.25}}
+
+/* ---- menú del avatar ---- */
+#meAvatar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bt-menu{position:fixed;z-index:999;min-width:240px;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;box-shadow:0 20px 40px -14px rgba(0,0,0,.45);padding:6px;animation:btpop .14s ease-out;transform-origin:top right}
+@keyframes btpop{from{opacity:0;transform:scale(.96) translateY(-4px)}to{opacity:1;transform:none}}
+.bt-mwho{padding:9px 11px 11px;border-bottom:1px solid var(--border);margin-bottom:5px;display:flex;flex-direction:column;gap:1px}
+.bt-mwho b{font-size:14px}
+.bt-mwho span{font-size:11.5px;color:var(--text-dim)}
+.bt-menu a,.bt-menu button{display:flex;align-items:center;gap:11px;width:100%;border:0;background:none;color:var(--text);padding:10px 11px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:600;text-align:left;text-decoration:none;cursor:pointer}
+.bt-menu a:hover,.bt-menu button:hover{background:var(--surface-2)}
+.bt-menu a.on{background:var(--accent-soft);color:var(--accent-ink)}
+.bt-menu .out{color:var(--danger);margin-top:4px;border-top:1px solid var(--border);border-radius:0 0 9px 9px;padding-top:12px}
+
+/* ---- modal Cambiar PIN ---- */
+.bt-modal .bt-box.bt-pinbox{max-width:400px;padding:26px 24px 22px;position:relative;animation:btpop .18s ease-out}
+.bt-pinx{position:absolute;top:12px;right:12px;border:0;background:none;color:var(--text-dim);width:30px;height:30px;border-radius:8px;display:grid;place-items:center}
+.bt-pinx:hover{background:var(--surface-2);color:var(--text)}
+.bt-pinhead{display:flex;gap:14px;align-items:center;margin-bottom:20px;padding-right:24px}
+.bt-pinico{width:46px;height:46px;border-radius:14px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.bt-pinhead h3{font-size:17px;margin:0 0 3px}
+.bt-pinhead p{margin:0;font-size:12.5px;color:var(--text-dim);line-height:1.4}
+.bt-pinbody{display:grid;gap:18px}
+.bt-pintop{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px;font-weight:700;color:var(--text-dim)}
+.bt-pineye{border:0;background:none;color:var(--text-dim);padding:4px;border-radius:7px;display:grid;place-items:center}
+.bt-pineye:hover{color:var(--accent);background:var(--surface-2)}
+.bt-pin{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.bt-pin input{width:100%;height:54px;text-align:center;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:22px;font-weight:600;color:var(--text);background:var(--surface-2);border:2px solid var(--border);border-radius:13px;padding:0;transition:border-color .12s,background .12s,box-shadow .12s}
+.bt-pin input:focus{outline:0;border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 4px var(--accent-soft)}
+.bt-pin input.filled{border-color:var(--text-dim)}
+.bt-pin.ok input{border-color:var(--ok);background:var(--ok-bg)}
+.bt-pin.err input{border-color:var(--danger);background:var(--danger-bg)}
+.bt-pin.shake{animation:btshake .35s}
+@keyframes btshake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.bt-pinmsg{min-height:16px;margin-top:6px;font-size:11.5px;font-weight:600;color:var(--text-dim)}
+.bt-pinmsg.bad{color:var(--danger)}
+.bt-pinmsg.good{color:var(--ok)}
+.bt-pinsave{width:100%;margin-top:20px;border:1.5px solid var(--accent-ink);background:var(--accent);color:#fff;border-radius:12px;padding:13px;font-family:inherit;font-size:14px;font-weight:700;box-shadow:0 2px 0 var(--accent-ink);cursor:pointer;transition:transform .08s,box-shadow .08s,opacity .15s}
+.bt-pinsave:active:not(:disabled){transform:translateY(2px);box-shadow:none}
+.bt-pinsave:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
+.bt-pindone{text-align:center;padding:14px 4px 6px}
+.bt-pinok{width:72px;height:72px;border-radius:50%;background:var(--ok-bg);color:var(--ok);display:grid;place-items:center;margin:0 auto 16px;animation:btpop .3s cubic-bezier(.2,1.4,.4,1)}
+.bt-pindone h3{font-size:18px;margin-bottom:6px}
+.bt-pindone p{margin:0;color:var(--text-dim);font-size:13px}
+@media (max-width:420px){.bt-pin input{height:50px;font-size:20px}.bt-pin{gap:8px}}
