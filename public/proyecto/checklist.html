@@ -195,6 +195,58 @@ body{padding-bottom:100px}
   .pwrap .panel{width:100%}
   .panel .row2{flex-direction:column}
 }
+
+/* Filtros (escritorio: menús + chips; celular: hoja inferior) */
+.ckfbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fpill{border:1.5px solid var(--border);background:var(--surface);color:var(--text);border-radius:99px;padding:6px 12px;font-family:inherit;font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.fpill:hover{border-color:var(--accent)}
+.fpill.on{background:var(--accent);border-color:var(--accent-ink);color:#fff}
+.fbadge{background:#fff;color:var(--accent-ink);border-radius:99px;font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:1px 7px;font-weight:600}
+.fn{font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;opacity:.7}
+.fchip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent-ink);border-radius:99px;padding:4px 6px 4px 11px;font-size:11.5px;font-weight:700}
+.fchip button{border:0;background:none;color:inherit;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;padding:0}
+.fchip button:hover{background:rgba(0,0,0,.14)}
+.fclear{border:0;background:none;color:var(--accent);font-family:inherit;font-weight:700;font-size:12px;text-decoration:underline;padding:4px 6px}
+#ckChipsD{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--border)}
+#ckFilterBarM{margin:2px 0 12px}
+.fpop{position:fixed;z-index:999;min-width:220px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;box-shadow:0 18px 36px -12px rgba(0,0,0,.45);padding:6px}
+.fpop label{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+.fpop label:hover{background:var(--surface-2)}
+.fpop label .fn{margin-left:auto}
+.fpop input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent)}
+.fft{border-top:1px solid var(--border);margin-top:4px;padding:6px 6px 2px;display:flex;justify-content:space-between}
+.fsheetbd{position:fixed;inset:0;background:rgba(10,12,10,.5);z-index:998;display:flex;align-items:flex-end;justify-content:center}
+.fsheet{background:var(--surface);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom,0px));max-height:85vh;overflow:auto;animation:fsl .2s ease-out}
+@keyframes fsl{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.fsheet h3{font-size:15px;margin-bottom:12px}
+.fgrp{margin-bottom:14px}
+.fgrp h4{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-dim);margin:0 0 8px}
+.fseg{display:flex;gap:6px;flex-wrap:wrap}
+.ffoot{display:flex;justify-content:flex-start;margin-bottom:6px}
+.fgo{width:100%;border:1.5px solid var(--accent-ink);background:var(--accent);color:#fff;border-radius:12px;padding:12px;font-family:inherit;font-weight:700;font-size:14px;box-shadow:0 2px 0 var(--accent-ink)}
+button.kpi{text-align:left;font-family:inherit;color:inherit;width:100%}
+.kpi[data-kfilter]{cursor:pointer;transition:border-color .12s,box-shadow .12s}
+.kpi[data-kfilter]:hover{border-color:var(--accent)}
+.kpi.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+
+/* Tabla: columnas con ancho definido y texto largo expandible */
+.cktable{table-layout:fixed;min-width:780px}
+.cktable th:nth-child(1){width:42px}
+.cktable th:nth-child(2){width:44px}
+.cktable th:nth-child(4){width:96px}
+.cktable th:nth-child(5){width:170px}
+.cktable th:nth-child(6){width:210px}
+.cktable th:nth-child(7){width:104px}
+.cktable .ck-gantt{min-width:0}
+.cktable .ck-gantt .gtbadge{max-width:100%}
+.cktable .ck-gantt .gtxt{max-width:112px;white-space:nowrap}
+.cktable .xp .evt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;line-height:1.4}
+.cktable .xp.open .evt{display:block;-webkit-line-clamp:unset;white-space:pre-wrap}
+.cktable .evtog{display:none;border:0;background:none;color:var(--accent);font-family:inherit;font-size:11px;font-weight:700;padding:2px 0 0;text-decoration:underline}
+.cktable .xp.more .evtog{display:block}
+.cktable .ck-ev{max-width:none;white-space:normal;overflow:visible;text-overflow:clip}
+.cktable .ck-actions-h,.cktable .ck-actions-cell{position:sticky;right:0;background:var(--surface);width:104px;min-width:104px}
+.cktable th.ck-actions-h{background:var(--surface-2)}
 </style>
 </head>
 <body>
@@ -223,24 +275,16 @@ body{padding-bottom:100px}
       <span><i style="background:var(--border)"></i>Pendiente · <span id="legPending">0</span></span>
     </div>
   </div>
-  <div class="ck-filters" id="ckFiltersM">
-    <button class="on" data-status="all">Todos</button>
-    <button data-status="implementado">Implementado</button>
-    <button data-status="parcial">Parcial</button>
-    <button data-status="pendiente">Pendiente</button>
-  </div>
   <div class="section"><h3>Ítems <button class="addbtn" id="btnAddItemM">+</button></h3></div>
-  <div class="ck-filters" id="ckUserFiltersM">
-    <button class="on" data-user="all">Todos</button>
-  </div>
+  <div class="ckfbar" id="ckFilterBarM"></div>
   <div id="ckCatsM"></div>
 </div>
 
 <div class="pagepad ck-desktop">
   <div class="ck-kpis">
-    <div class="kpi"><div class="klabel">Implementado</div><div class="kval" id="kpiOk" style="color:var(--ok)">0</div></div>
-    <div class="kpi"><div class="klabel">Parcial</div><div class="kval" id="kpiWarn" style="color:var(--warn)">0</div></div>
-    <div class="kpi"><div class="klabel">Pendiente</div><div class="kval" id="kpiPending" style="color:var(--danger)">0</div></div>
+    <button type="button" class="kpi" data-kfilter="implementado" title="Filtrar por implementado"><div class="klabel">Implementado</div><div class="kval" id="kpiOk" style="color:var(--ok)">0</div></button>
+    <button type="button" class="kpi" data-kfilter="parcial" title="Filtrar por parcial"><div class="klabel">Parcial</div><div class="kval" id="kpiWarn" style="color:var(--warn)">0</div></button>
+    <button type="button" class="kpi" data-kfilter="pendiente" title="Filtrar por pendiente"><div class="klabel">Pendiente</div><div class="kval" id="kpiPending" style="color:var(--danger)">0</div></button>
     <div class="kpi"><div class="klabel">Total ítems</div><div class="kval" id="kpiTotal">0</div></div>
   </div>
   <div class="ck-compare">
@@ -264,18 +308,9 @@ body{padding-bottom:100px}
           <button class="on" data-g="categoria">Por categoría</button>
           <button data-g="prioridad">Por prioridad</button>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <div class="ck-filters" id="ckFiltersD" style="margin:0">
-            <button class="on" data-status="all">Todos</button>
-            <button data-status="implementado">Implementado</button>
-            <button data-status="parcial">Parcial</button>
-            <button data-status="pendiente">Pendiente</button>
-          </div>
-          <div class="ck-filters" id="ckUserFiltersD" style="margin:0">
-            <button class="on" data-user="all">Todos</button>
-          </div>
-        </div>
+        <div class="ckfbar" id="ckFilterBarD"></div>
       </div>
+      <div id="ckChipsD" style="display:none"></div>
       <table class="cktable" id="ckTable"><thead><tr>
         <th class="ck-num">#</th><th class="ck-c1"></th>
         <th class="sortable active" data-sort="nombre">Ítem <span class="sarrow">▲</span></th>
@@ -299,7 +334,7 @@ body{padding-bottom:100px}
   const nuevoItemText = new URLSearchParams(location.search).get('nuevoItem');
   let fromIdeaId = new URLSearchParams(location.search).get('ideaId');
   let me = null, items = [], usuarios = [], tareas = [];
-  let filterStatus = 'all', filterUser = 'all', railCat = 'all';
+  let railCat = 'all';
   let groupBy = 'categoria', search = '', sortKey = null, sortDir = 1;
   let collapsedCats = new Set();
   const ESTADOS = ['pendiente','parcial','implementado'];
@@ -336,21 +371,6 @@ body{padding-bottom:100px}
     document.getElementById('meAvatar').className = 'avatar ' + me.avatar_color;
     document.getElementById('pTitle').textContent = proyectoRes.proyecto.nombre;
     document.title = 'Checklist — ' + proyectoRes.proyecto.nombre;
-
-    const userBtns = '<button class="on" data-user="all">Todos</button>' +
-      usuarios.map(u => `<button data-user="${u.id}">${u.nombre}</button>`).join('');
-    document.getElementById('ckUserFiltersM').innerHTML = userBtns;
-    document.getElementById('ckUserFiltersD').innerHTML = userBtns;
-    [document.getElementById('ckUserFiltersM'), document.getElementById('ckUserFiltersD')].forEach(bar => {
-      bar.addEventListener('click', (e) => {
-        const b = e.target.closest('button'); if(!b) return;
-        filterUser = b.dataset.user;
-        [document.getElementById('ckUserFiltersM'), document.getElementById('ckUserFiltersD')].forEach(x => {
-          x.querySelectorAll('button').forEach(y => y.classList.toggle('on', y.dataset.user===filterUser));
-        });
-        renderMobile(); renderDesktop();
-      });
-    });
 
     document.getElementById('btnCats').innerHTML = BT.gearIcon;
     document.getElementById('btnCats').onclick = openCatsManager;
@@ -413,6 +433,7 @@ body{padding-bottom:100px}
   }
 
   function renderHero(){
+    renderFilterBars();
     const ok = items.filter(i=>i.estado==='implementado').length;
     const warn = items.filter(i=>i.estado==='parcial').length;
     const pending = items.filter(i=>i.estado==='pendiente').length;
@@ -469,10 +490,10 @@ body{padding-bottom:100px}
     const names = Object.keys(cats);
     if (!names.length){ wrap.innerHTML = '<div class="empty-mini">Todavía no hay ítems. Agrega el primero con "+".</div>'; return; }
     wrap.innerHTML = names.map(name => {
-      const list = cats[name].filter(it => (filterStatus==='all' || it.estado===filterStatus) && (filterUser==='all' || (it.asignados||[]).some(u=>u.id===filterUser)));
+      const list = cats[name].filter(it => passes(it));
       if (!list.length) return '';
       const ok = cats[name].filter(i=>i.estado==='implementado').length, total = cats[name].length;
-      const collapsed = collapsedCats.has(name);
+      const collapsed = collapsedCats.has(name) && !activeCount();
       return `<div class="ckcat${collapsed?' collapsed':''}" data-cat="${name}">
         <div class="cktitle"><span class="ctname">${name}</span><div class="ctrack"><div style="width:${ok/total*100}%;background:var(--ok)"></div></div><span class="cfrac">${ok}/${total}</span>
           <svg class="ccollapse" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
@@ -539,8 +560,7 @@ body{padding-bottom:100px}
     const q = search.trim().toLowerCase();
     let rows = items.filter(it =>
       (railCat==='all'||groupKeyOf(it)===railCat) &&
-      (filterStatus==='all'||it.estado===filterStatus) &&
-      (filterUser==='all' || (it.asignados||[]).some(u=>u.id===filterUser)) &&
+      passes(it) &&
       (!q || it.nombre.toLowerCase().includes(q))
     );
     if (sortKey) {
@@ -559,13 +579,14 @@ body{padding-bottom:100px}
     tbody.innerHTML = rows.map((it,idx) => `<tr data-id="${it.id}">
       <td class="ck-num">${idx+1}</td>
       <td class="ck-c1"><span class="cboxwrap" style="cursor:pointer">${checkboxHtml(it.estado).replace('width:22px','width:18px').replace('height:22px','height:18px')}</span></td>
-      <td class="ck-name">${it.nombre}</td><td>${prioTagHtml(it.prioridad)}</td>
+      <td class="ck-name xp"><div class="evt">${it.nombre}</div><button type="button" class="evtog">ver más</button></td><td>${prioTagHtml(it.prioridad)}</td>
       <td class="ck-gantt">${ganttBadgeHtml(it)}</td>
-      <td class="ck-ev">${it.evidencia||'—'}</td>
+      <td class="ck-ev xp"><div class="evt">${it.evidencia||'—'}</div><button type="button" class="evtog">ver más</button></td>
       <td class="ck-actions-cell">
         <button class="ck-rowbtn" data-act="edit" title="Editar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
         <button class="ck-rowbtn" data-act="del" title="Eliminar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
       </td></tr>`).join('');
+    markExpandables();
     tbody.querySelectorAll('.cboxwrap').forEach(el => el.addEventListener('click', (e) => {
       const tr = e.target.closest('tr');
       if (!tr) { console.warn('[checkbox] no se encontró la fila <tr>'); return; }
@@ -641,16 +662,99 @@ body{padding-bottom:100px}
     renderDesktop();
   }));
 
-  [document.getElementById('ckFiltersM'), document.getElementById('ckFiltersD')].forEach(bar => {
-    bar.addEventListener('click', (e) => {
-      const b = e.target.closest('button'); if(!b) return;
-      filterStatus = b.dataset.status;
-      [document.getElementById('ckFiltersM'), document.getElementById('ckFiltersD')].forEach(x => {
-        x.querySelectorAll('button').forEach(y => y.classList.toggle('on', y.dataset.status===filterStatus));
-      });
-      renderMobile(); renderDesktop();
-    });
+  // ---------- Filtros: estado, prioridad y persona (se combinan; varios valores por criterio) ----------
+  const F = { estado: new Set(), prio: new Set(), quien: new Set() };
+  const FACETS = {
+    estado: { title: 'Estado', opts: () => [['implementado', 'Implementado'], ['parcial', 'Parcial'], ['pendiente', 'Pendiente']], vals: it => [it.estado] },
+    prio: { title: 'Prioridad', opts: () => [['alta', 'Alta'], ['media', 'Media'], ['baja', 'Baja'], ['', 'Sin prioridad']], vals: it => [it.prioridad || ''] },
+    quien: { title: 'Persona', opts: () => [...usuarios.map(u => [u.id, u.nombre]), ['', 'Sin asignar']], vals: it => (it.asignados || []).length ? it.asignados.map(u => u.id) : [''] },
+  };
+  const fLabel = (k, v) => (FACETS[k].opts().find(o => o[0] === v) || [v, v])[1];
+  const passes = (it, skip) => Object.keys(FACETS).every(k => k === skip || !F[k].size || FACETS[k].vals(it).some(v => F[k].has(v)));
+  const countFor = (k, v) => items.filter(it => passes(it, k) && FACETS[k].vals(it).includes(v)).length;
+  const activeCount = () => Object.keys(F).reduce((n, k) => n + F[k].size, 0);
+  let menuOpen = null;   // 'estado' | 'prio' | 'quien' | 'sheet' | null
+  const FILTER_ICON = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>';
+  const DOWN_ICON = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  const X_ICON = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const fAttr = s => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+
+  function chipsHtml(){
+    const out = [];
+    Object.keys(F).forEach(k => [...F[k]].forEach(v => out.push(`<span class="fchip">${FACETS[k].title}: ${fLabel(k, v)}<button data-frm="${k}|${fAttr(v)}" aria-label="Quitar filtro">${X_ICON}</button></span>`)));
+    return out.length ? out.join('') + '<button class="fclear" data-fclear>Limpiar todo</button>' : '';
+  }
+  function renderFilterBars(){
+    const n = activeCount();
+    // Escritorio: tres menús desplegables + chips activos
+    const bd = document.getElementById('ckFilterBarD');
+    bd.innerHTML = Object.keys(FACETS).map(k => `<button class="fpill${F[k].size ? ' on' : ''}" data-fopen="${k}" aria-haspopup="true">${FACETS[k].title}${F[k].size ? `<span class="fbadge">${F[k].size}</span>` : ''} ${DOWN_ICON}</button>`).join('');
+    const cd = document.getElementById('ckChipsD');
+    cd.innerHTML = chipsHtml(); cd.style.display = n ? '' : 'none';
+    // Celular: botón «Filtros» + chips
+    const bm = document.getElementById('ckFilterBarM');
+    bm.innerHTML = `<button class="fpill${n ? ' on' : ''}" data-fopen="sheet" aria-haspopup="dialog">${FILTER_ICON} Filtros${n ? `<span class="fbadge">${n}</span>` : ''}</button>${chipsHtml()}`;
+    // KPI como filtro de estado
+    document.querySelectorAll('[data-kfilter]').forEach(b => b.classList.toggle('on', F.estado.size === 1 && F.estado.has(b.dataset.kfilter)));
+    renderPop();
+  }
+  function popBody(k){
+    return FACETS[k].opts().map(([v, l]) => `<label><input type="checkbox" data-fchk="${k}|${fAttr(v)}" ${F[k].has(v) ? 'checked' : ''}> ${l}<span class="fn">${countFor(k, v)}</span></label>`).join('')
+      + `<div class="fft"><button class="fclear" data-fclearK="${k}">Limpiar</button><button class="fclear" data-fclose>Listo</button></div>`;
+  }
+  function sheetBody(){
+    return Object.keys(FACETS).map(k => `<div class="fgrp"><h4>${FACETS[k].title}</h4><div class="fseg">${FACETS[k].opts().map(([v, l]) => `<button class="fpill${F[k].has(v) ? ' on' : ''}" data-fpill="${k}|${fAttr(v)}">${l} <span class="fn">${countFor(k, v)}</span></button>`).join('')}</div></div>`).join('')
+      + `<div class="ffoot"><button class="fclear" data-fclear>Limpiar todo</button></div><button class="fgo" data-fclose>Ver ${items.filter(it => passes(it)).length} ítems</button>`;
+  }
+  function renderPop(){
+    let pop = document.getElementById('ckPop'), sheet = document.getElementById('ckSheet');
+    if (menuOpen && menuOpen !== 'sheet') {
+      const anchor = document.querySelector(`#ckFilterBarD [data-fopen="${menuOpen}"]`);
+      if (!anchor) { closeMenu(); return; }
+      if (!pop) { pop = document.createElement('div'); pop.id = 'ckPop'; pop.className = 'fpop'; document.body.appendChild(pop); }
+      pop.innerHTML = popBody(menuOpen);
+      const r = anchor.getBoundingClientRect();
+      pop.style.top = (r.bottom + 6) + 'px';
+      pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - pop.offsetWidth - 8)) + 'px';
+    } else if (pop) pop.remove();
+    if (menuOpen === 'sheet') {
+      if (!sheet) { sheet = document.createElement('div'); sheet.id = 'ckSheet'; sheet.className = 'fsheetbd'; sheet.innerHTML = '<div class="fsheet" role="dialog" aria-label="Filtros"><h3>Filtros</h3><div id="ckSheetBody"></div></div>'; document.body.appendChild(sheet); }
+      document.getElementById('ckSheetBody').innerHTML = sheetBody();
+    } else if (sheet) sheet.remove();
+  }
+  function closeMenu(){ menuOpen = null; renderPop(); }
+  function applyFilters(){ renderFilterBars(); renderMobile(); renderDesktop(); }
+  function toggleF(k, v){ F[k].has(v) ? F[k].delete(v) : F[k].add(v); }
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    const open = t.closest('[data-fopen]');
+    if (open) { const k = open.dataset.fopen; menuOpen = menuOpen === k ? null : k; renderPop(); return; }
+    const kf = t.closest('[data-kfilter]');
+    if (kf) { const v = kf.dataset.kfilter; const only = F.estado.size === 1 && F.estado.has(v); F.estado.clear(); if (!only) F.estado.add(v); applyFilters(); return; }
+    const rm = t.closest('[data-frm]'); if (rm) { const [k, v] = rm.dataset.frm.split('|'); F[k].delete(v); applyFilters(); return; }
+    if (t.closest('[data-fclear]')) { Object.keys(F).forEach(k => F[k].clear()); applyFilters(); return; }
+    const ck = t.closest('[data-fclearK]'); if (ck) { F[ck.dataset.fclearK].clear(); applyFilters(); return; }
+    const fp = t.closest('[data-fpill]'); if (fp) { const [k, v] = fp.dataset.fpill.split('|'); toggleF(k, v); applyFilters(); return; }
+    if (t.closest('[data-fclose]')) { closeMenu(); return; }
+    if (menuOpen && !t.closest('#ckPop') && !t.closest('.fsheet')) closeMenu();
   });
+  document.addEventListener('change', (e) => { const c = e.target.closest('[data-fchk]'); if (c) { const [k, v] = c.dataset.fchk.split('|'); toggleF(k, v); applyFilters(); } });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && menuOpen) closeMenu(); });
+  window.addEventListener('resize', () => { if (menuOpen && menuOpen !== 'sheet') closeMenu(); });
+  window.addEventListener('scroll', () => { if (menuOpen && menuOpen !== 'sheet') closeMenu(); }, { passive: true });
+
+  // Texto largo: celdas con alto fijo (2 líneas) que se expanden al presionar «ver más».
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.evtog'); if (!b) return;
+    const td = b.closest('.xp'); const on = td.classList.toggle('open');
+    b.textContent = on ? 'ver menos' : 'ver más';
+  });
+  function markExpandables(){
+    document.querySelectorAll('#ckTable .xp').forEach(td => {
+      const t = td.querySelector('.evt'); td.classList.remove('more');
+      if (t.scrollHeight > t.clientHeight + 1) td.classList.add('more');
+    });
+  }
 
   const LINK_SVG = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
   const ARROW_SVG = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
