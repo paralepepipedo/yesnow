@@ -3,6 +3,9 @@
   "builds": [
     { "src": "server.js", "use": "@vercel/node" }
   ],
+  "crons": [
+    { "path": "/api/cron/avisos", "schedule": "0 11 * * *" }
+  ],
   "routes": [
     { "src": "/(.*)", "dest": "server.js" }
   ]

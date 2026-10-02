@@ -150,6 +150,7 @@ window.BT = (function(){
     chart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
     key: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
     grid: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+    bell: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
     out: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
     eye: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
     eyeOff: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
@@ -256,6 +257,37 @@ window.BT = (function(){
     cur.focus();
   }
 
+  // ---- Avisos push (notificaciones del dispositivo) ----
+  const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  async function pushSub(){
+    if (!pushSupported()) return null;
+    const reg = await navigator.serviceWorker.ready;
+    return reg.pushManager.getSubscription();
+  }
+  function b64ToBytes(b64){
+    const pad = '='.repeat((4 - b64.length % 4) % 4);
+    const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+    return Uint8Array.from(raw, c => c.charCodeAt(0));
+  }
+  async function enablePush(){
+    if (!pushSupported()) { toast('Este navegador no permite avisos'); return false; }
+    const cfg = await api('/api/push/clave');
+    if (!cfg.activo) { toast('Los avisos no están configurados en el servidor'); return false; }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { toast('Permiso denegado. Actívalo en los ajustes del navegador'); return false; }
+    const reg = await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(cfg.clave) });
+    await api('/api/push/suscribir', { method: 'POST', body: JSON.stringify(sub.toJSON()) });
+    const r = await api('/api/push/probar', { method: 'POST' });
+    toast(r.enviados ? 'Avisos activados en este dispositivo' : 'Avisos activados');
+    return true;
+  }
+  async function disablePush(){
+    const sub = await pushSub();
+    if (sub) { await api('/api/push/desuscribir', { method: 'POST', body: JSON.stringify({ endpoint: sub.endpoint }) }); await sub.unsubscribe(); }
+    toast('Avisos desactivados en este dispositivo');
+  }
+
   function initAvatarMenu(){
     const av = document.getElementById('meAvatar');
     if (!av || av.dataset.menu) return;
@@ -269,10 +301,13 @@ window.BT = (function(){
     async function openMenu(){
       let nombre = '';
       try { nombre = (await api('/api/auth/me')).usuario.nombre; } catch (e) { return; }
+      let pushOn = false;
+      try { pushOn = pushSupported() && Notification.permission === 'granted' && !!(await pushSub()); } catch (e) {}
       menu = document.createElement('div');
       menu.className = 'bt-menu'; menu.setAttribute('role', 'menu');
       menu.innerHTML = `<div class="bt-mwho"><b>${escTxt(nombre)}</b><span>${proyectoId ? 'Menú del proyecto' : 'Tu cuenta'}</span></div>
         ${proyectoId ? `<a role="menuitem" href="/proyecto/${proyectoId}/inversion" class="${location.pathname.endsWith('/inversion') ? 'on' : ''}">${PROF_ICON.chart} Inversión del proyecto</a>` : ''}
+        ${pushSupported() ? `<button role="menuitem" data-m="push">${PROF_ICON.bell} ${pushOn ? 'Desactivar avisos' : 'Activar avisos'}</button>` : ''}
         <button role="menuitem" data-m="pin">${PROF_ICON.key} Cambiar PIN</button>
         ${proyectoId ? `<a role="menuitem" href="/proyectos">${PROF_ICON.grid} Mis proyectos</a>` : ''}
         <button role="menuitem" data-m="out" class="out">${PROF_ICON.out} Cerrar sesión</button>`;
@@ -285,6 +320,7 @@ window.BT = (function(){
         const b = e.target.closest('button'); if (!b) return;
         closeMenu();
         if (b.dataset.m === 'pin') changePin();
+        else if (b.dataset.m === 'push') { try { pushOn ? await disablePush() : await enablePush(); } catch (err) { toast('No se pudo cambiar los avisos'); } }
         else if (b.dataset.m === 'out') {
           const ok = await confirm({ title: 'Cerrar sesión', message: '¿Seguro que quieres salir?', okText: 'Cerrar sesión' });
           if (!ok) return;

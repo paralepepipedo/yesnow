@@ -3,13 +3,8 @@ const router = express.Router({ mergeParams: true });
 const db = require('../lib/db');
 const { isAuth } = require('./auth');
 
-async function notificar(usuarioId, tipo, mensaje, proyectoId, tareaId) {
-  if (!usuarioId) return;
-  await db.query(
-    `INSERT INTO bitacora_notificaciones (usuario_id, tipo, mensaje, proyecto_id, tarea_id) VALUES ($1,$2,$3,$4,$5)`,
-    [usuarioId, tipo, mensaje, proyectoId || null, tareaId || null]
-  );
-}
+const { notificar } = require('../lib/notificar');
+const { hoyChile, fechaLarga, esReunionAgendada, todosLosUsuarios } = require('../lib/avisos');
 
 const TIPOS = {
   fase: { tabla: 'bitacora_tareas', col: 'fase' },
@@ -266,6 +261,13 @@ router.post('/ideas', isAuth, async (req, res) => {
     `INSERT INTO bitacora_ideas (proyecto_id, texto, autor_id) VALUES ($1,$2,$3) RETURNING *`,
     [req.params.id, texto.trim(), req.session.usuario.id]
   );
+  try {
+    const { rows: proj } = await db.query('SELECT nombre FROM bitacora_proyectos WHERE id = $1', [req.params.id]);
+    const resumen = rows[0].texto.length > 140 ? rows[0].texto.slice(0, 137) + '…' : rows[0].texto;
+    for (const uid of await todosLosUsuarios()) {
+      if (uid !== req.session.usuario.id) await notificar(uid, 'idea', `${req.session.usuario.nombre} agregó una idea en ${proj[0]?.nombre || 'un proyecto'}: ${resumen}`, req.params.id, null, { titulo: 'Idea nueva' });
+    }
+  } catch (e) { console.error('[notificar idea]', e); }
   res.json({ idea: { id: rows[0].id, texto: rows[0].texto, autor: req.session.usuario.nombre, creadoEn: rows[0].creado_en } });
 });
 
@@ -358,6 +360,16 @@ router.post('/inversion', isAuth, async (req, res) => {
        b.fecha, personas, b.tareaId || null, req.session.usuario.id]
     );
     await asegurarGrupo(req.params.id, 'inversion', b.categoria);
+    // Reunión agendada: avisa a los participantes (o a todos si no se indicó ninguno), salvo a quien la registra.
+    const mov = { estado, tipo: b.tipo, categoria: String(b.categoria).trim() };
+    if (esReunionAgendada(mov) && b.fecha >= hoyChile()) {
+      try {
+        const destino = personas.length ? personas : await todosLosUsuarios();
+        for (const uid of destino) {
+          if (uid !== req.session.usuario.id) await notificar(uid, 'reunion', `Reunión agendada para el ${fechaLarga(b.fecha)}: ${String(b.concepto).trim()}`, req.params.id, null, { titulo: 'Reunión agendada', url: `/proyecto/${req.params.id}/inversion` });
+        }
+      } catch (e) { console.error('[notificar reunion]', e); }
+    }
     const { rows: full } = await db.query(`${INV_SELECT} WHERE i.id = $1`, [rows[0].id]);
     res.json({ movimiento: mapInv(full[0]) });
   } catch (e) { console.error('[POST inversion]', e); res.status(500).json({ error: 'Error interno' }); }

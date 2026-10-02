@@ -9,6 +9,8 @@ const authRoutes = require('./routes/auth');
 const proyectosRoutes = require('./routes/proyectos');
 const proyectoDatosRoutes = require('./routes/proyecto-datos');
 const notificacionesRoutes = require('./routes/notificaciones');
+const pushRoutes = require('./routes/push');
+const cronRoutes = require('./routes/cron');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -39,6 +41,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/proyectos', proyectosRoutes);
 app.use('/api/proyectos/:id', proyectoDatosRoutes);
 app.use('/api/notificaciones', notificacionesRoutes);
+app.use('/api/push', pushRoutes);
+app.use('/api/cron', cronRoutes);
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/proyectos', (req, res) => res.sendFile(path.join(__dirname, 'public', 'proyectos', 'index.html')));

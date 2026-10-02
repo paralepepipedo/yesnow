@@ -900,6 +900,7 @@ body{padding-bottom:100px}
   document.getElementById('btnAddIdeaD').addEventListener('click', () => openIdeaModal());
 
   // ---- Notificaciones ----
+  const escHtml = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   document.getElementById('btnBell').addEventListener('click', async () => {
     const d = await BT.api('/api/notificaciones');
     const wrap = document.createElement('div');
@@ -907,7 +908,7 @@ body{padding-bottom:100px}
     wrap.innerHTML = `<div class="bt-backdrop"></div><div class="bt-box" style="max-width:400px">
       <h3>Notificaciones</h3>
       <div class="notif-list">${d.notificaciones.length ? d.notificaciones.map(n => `
-        <div class="notif-item">${n.mensaje}<div class="nmeta">${n.proyectoNombre||''} · ${timeAgo(n.creadoEn)}</div></div>
+        <div class="notif-item">${escHtml(n.mensaje)}<div class="nmeta">${escHtml(n.proyectoNombre||'')} · ${timeAgo(n.creadoEn)}</div></div>
       `).join('') : '<div class="empty-mini">Sin notificaciones todavía.</div>'}</div>
       <div class="bt-actions" style="margin-top:14px"><button class="primary ok">Cerrar</button></div>
     </div>`;
