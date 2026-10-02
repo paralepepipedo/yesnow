@@ -69,6 +69,10 @@ body{padding-bottom:100px}
 .idea-section h3{color:var(--accent-ink)}
 .idea-section .bulb{width:26px;height:26px;border-radius:8px;background:var(--accent);color:#fff;display:grid;place-items:center;flex:none}
 .idea-section h3 .htitle{display:flex;align-items:center;gap:8px}
+.d-mobile .idea-section h3{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.d-mobile .idea-section h3 .addbtn{flex:none;width:34px;height:34px;padding:0;border:0;border-radius:11px;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 12px -2px color-mix(in srgb, var(--accent) 55%, transparent);transition:transform .12s,box-shadow .12s}
+.d-mobile .idea-section h3 .addbtn:active{transform:scale(.92);box-shadow:0 2px 6px -2px color-mix(in srgb, var(--accent) 55%, transparent)}
+.d-mobile .idea-section h3 .addbtn:hover{background:var(--accent)}
 
 .icard{scroll-snap-align:start;flex:none;width:170px;border:2px solid var(--border);border-radius:12px;background:var(--surface);padding:10px;text-align:left;color:var(--text);box-shadow:var(--shadow)}
 .icard .iteaser{font-size:11.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
@@ -231,7 +235,7 @@ body{padding-bottom:100px}
   </div>
 
   <div class="idea-section">
-    <h3><span class="htitle"><span class="bulb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.75.75 1.23 1.5 1.41 2.5"/></svg></span> Ideas recientes</span> <button class="addbtn" id="btnAddIdeaM">+</button></h3>
+    <h3><span class="htitle"><span class="bulb"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5.75.75 1.23 1.5 1.41 2.5"/></svg></span> Ideas recientes</span> <button class="addbtn" id="btnAddIdeaM" aria-label="Nueva idea"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button></h3>
     <div class="hscroll" id="ideaCarousel"></div>
     <div class="detail-panel" id="ideaDetail" hidden></div>
   </div>
