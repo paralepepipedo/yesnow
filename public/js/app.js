@@ -288,6 +288,33 @@ window.BT = (function(){
     toast('Avisos desactivados en este dispositivo');
   }
 
+  // Invitación para activar avisos: solo en la lista de proyectos y el dashboard, mientras este dispositivo no los tenga.
+  async function initPushBanner(){
+    if (!/^\/(proyectos|proyecto\/[^/]+)\/?$/.test(location.pathname) || !pushSupported() || Notification.permission === 'denied') return;
+    try { if (localStorage.getItem('bt-push-dismissed')) return; } catch (e) {}
+    try { await api('/api/auth/me'); } catch (e) { return; }
+    let sub = null;
+    try { sub = await Promise.race([pushSub(), new Promise(r => setTimeout(() => r(null), 4000))]); } catch (e) {}
+    if (sub && Notification.permission === 'granted') return;
+    const bar = document.createElement('div');
+    bar.className = 'bt-pushbar'; bar.setAttribute('role', 'region'); bar.setAttribute('aria-label', 'Activar avisos');
+    bar.innerHTML = `<span class="bt-pb-ic">${PROF_ICON.bell}</span>
+      <div class="bt-pb-tx"><b>Activa los avisos</b><span>Entérate de ideas nuevas, plazos y reuniones.</span></div>
+      <button class="bt-pb-go">Activar</button>
+      <button class="bt-pb-x" aria-label="Cerrar">&times;</button>`;
+    document.body.appendChild(bar);
+    requestAnimationFrame(() => bar.classList.add('on'));
+    const close = (remember) => { if (remember) { try { localStorage.setItem('bt-push-dismissed', '1'); } catch (e) {} } bar.classList.remove('on'); setTimeout(() => bar.remove(), 250); };
+    bar.querySelector('.bt-pb-x').onclick = () => close(true);
+    bar.querySelector('.bt-pb-go').onclick = async (e) => {
+      const btn = e.currentTarget; btn.disabled = true;
+      try { if (await enablePush()) close(false); }
+      catch (err) { console.error('[avisos]', err); toast('No se pudo activar los avisos (' + (err && err.name || 'error') + ': ' + (err && err.message || '').slice(0, 90) + ')', 9000); }
+      btn.disabled = false;
+    };
+  }
+  window.addEventListener('load', () => setTimeout(initPushBanner, 1200));
+
   function initAvatarMenu(){
     const av = document.getElementById('meAvatar');
     if (!av || av.dataset.menu) return;
