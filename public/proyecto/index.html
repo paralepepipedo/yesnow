@@ -109,19 +109,30 @@ body{padding-bottom:100px}
 .col{display:flex;flex-direction:column;gap:16px}
 
 .mgant{overflow-x:auto;position:relative}
-.mgdays{display:flex;align-items:center;font-size:9px;color:var(--text-dim);margin-bottom:6px;gap:2px}
-.mgday{width:20px;text-align:center;flex:none}
+.mgdays{display:flex;align-items:flex-end;font-size:9px;color:var(--text-dim);margin-bottom:6px}
+.mgday{width:20px;text-align:center;flex:none;line-height:1.15}
+.mgday b{display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;color:var(--text)}
+.mgday.today{background:var(--accent);color:#fff}
+.mgday.today b{color:#fff}
+.mgday.we{opacity:.6}
 .mgrow{display:flex;align-items:center;gap:8px;margin-bottom:7px}
 .mgrow:last-child{margin-bottom:0}
 .mgname{width:142px;flex:none;font-size:11.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:default;
   position:sticky;left:0;background:var(--surface);z-index:1;padding-right:6px}
-.mgtrack{position:relative;height:16px;flex:none;display:flex;gap:2px}
-.mgcell{width:20px;flex:none;height:16px;border-radius:3px;background:var(--surface-2);cursor:pointer}
+.mgtrack{position:relative;height:16px;flex:none;display:flex}
+.mgcell{width:20px;flex:none;height:16px;background:var(--surface-2);cursor:pointer;box-shadow:inset -1px 0 0 var(--surface)}
+.mgcell.we{background:color-mix(in srgb, var(--surface-2) 70%, var(--border))}
+.mgcell.today{background:var(--accent-soft)}
 .mgcell.hl{background:var(--accent-soft)}
 .mgday{cursor:pointer;border-radius:3px}
 .mgday.hl{color:var(--accent-ink);font-weight:800;background:var(--accent-soft)}
 .mgbar{position:absolute;height:16px;border-radius:6px;top:0;cursor:pointer;display:flex;align-items:center;padding:0 6px;overflow:hidden}
 .mgbar span{font-size:9px;color:#fff;font-weight:700;white-space:nowrap}
+.mgbar.late{background:var(--danger-bg);color:var(--danger);border:1.5px solid var(--danger);font-size:9px;font-weight:700;white-space:nowrap;overflow:visible;height:16px;line-height:1;padding:0 7px}
+.mg-tip-float b{display:block;font-size:12px;margin-bottom:2px}
+.mg-tip-float .l{color:var(--danger);font-weight:700}
+.mg-tip-float .w{color:var(--warn);font-weight:700}
+.mg-tip-float .o{color:var(--ok);font-weight:700}
 .mg-tip-float{position:fixed;z-index:999;max-width:220px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px 10px;
   font-size:11px;font-weight:600;color:var(--text);box-shadow:0 12px 24px -12px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .12s}
 .mg-tip-float.on{opacity:1}
@@ -250,7 +261,7 @@ body{padding-bottom:100px}
   <div class="grid2">
     <div class="col">
       <div class="panel">
-        <h3>Próximos 14 días <a href="#" id="linkGanttD">Ver Gantt completo →</a></h3>
+        <h3>Próximos 30 días <a href="#" id="linkGanttD">Ver Gantt completo →</a></h3>
         <div class="mgant">
           <div class="mgdays" id="mgDays"></div>
           <div id="mgRows"></div>
@@ -313,18 +324,23 @@ body{padding-bottom:100px}
     if (diff <= 3) return { color:'var(--warn)', num:diff+'d', label:'Vence en '+diff+' días', bucket:'warn', diff };
     return { color:'var(--ok)', num:diff+'d', label:'Vence en '+diff+' días', bucket:'ok', diff };
   }
-  function miniGanttPos(t, days){
-    days = days || 14;
-    const start = new Date((t.fechaInicio||t.fechaFin) + 'T00:00:00');
-    const end = new Date(t.fechaFin + 'T00:00:00');
-    const todayD = new Date(); todayD.setHours(0,0,0,0);
-    let rawOffset = Math.round((start - todayD) / 86400000);
-    let dur = Math.max(1, Math.round((end - start) / 86400000) + 1);
-    let offset = rawOffset;
-    if (offset < 0) { dur += offset; offset = 0; }
-    dur = Math.max(1, Math.min(dur, days - offset));
-    offset = Math.min(offset, days - 1);
-    return { rawOffset, offset, dur };
+  // Posición real de una tarea respecto de hoy, en días (puede ser negativa si ya empezó o venció).
+  function mgSpan(t){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const ini = new Date((t.fechaInicio||t.fechaFin) + 'T00:00:00');
+    const fin = new Date(t.fechaFin + 'T00:00:00');
+    return { s: Math.round((ini - today) / 86400000), e: Math.round((fin - today) / 86400000), ini, fin, tieneIni: !!t.fechaInicio };
+  }
+  function mgFecha(d){ return d.getDate() + ' ' + ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][d.getMonth()]; }
+  function mgTipHtml(t){
+    const sp = mgSpan(t), dur = Math.round((sp.fin - sp.ini) / 86400000) + 1;
+    const nombre = String(t.nombre).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const rango = sp.tieneIni ? mgFecha(sp.ini) + ' → ' + mgFecha(sp.fin) + ' (' + dur + (dur === 1 ? ' día)' : ' días)') : 'Vence ' + mgFecha(sp.fin);
+    let est;
+    if (sp.e < 0) est = '<span class="l">Vencida hace ' + (-sp.e) + (sp.e === -1 ? ' día' : ' días') + '</span>';
+    else if (sp.e === 0) est = '<span class="w">Vence hoy</span>';
+    else est = '<span class="' + (sp.e <= 3 ? 'w' : 'o') + '">Vence en ' + sp.e + ' días</span>';
+    return '<b>' + nombre + '</b>' + rango + '<br>' + est;
   }
   function matchesUser(u){ return filterUser === 'all' || (u||[]).some(x => x.id === filterUser); }
   function avatarHtml(u, size){
@@ -458,18 +474,26 @@ body{padding-bottom:100px}
     const trackW = MG_DAYS * MG_COLW;
     mgDayDates = [];
     let daysHtml = '<div class="mgname" style="cursor:default"></div>';
-    for (let i=0;i<MG_DAYS;i++){ const d = new Date(today); d.setDate(d.getDate()+i); mgDayDates.push(d); daysHtml += `<div class="mgday" data-day="${i}">${DAYNAMES[d.getDay()]}</div>`; }
+    for (let i=0;i<MG_DAYS;i++){ const d = new Date(today); d.setDate(d.getDate()+i); mgDayDates.push(d); const we = d.getDay()===0 || d.getDay()===6; daysHtml += `<div class="mgday${i===0?' today':''}${we?' we':''}" data-day="${i}">${DAYNAMES[d.getDay()]}<b>${d.getDate()}</b></div>`; }
     document.getElementById('mgDays').innerHTML = daysHtml;
 
-    const rows = cacheTareas.filter(t => matchesUser(t.asignados) && miniGanttPos(t, MG_DAYS).rawOffset < MG_DAYS);
+    const rows = cacheTareas.filter(t => matchesUser(t.asignados) && mgSpan(t).s < MG_DAYS);
     document.getElementById('mgEmpty').hidden = !!rows.length;
     document.getElementById('mgRows').innerHTML = rows.map(t => {
-      const pos = miniGanttPos(t, MG_DAYS);
-      let cells = ''; for (let d=0; d<MG_DAYS; d++) cells += `<div class="mgcell" data-day="${d}"></div>`;
-      const left = (pos.offset/MG_DAYS*100), width = (pos.dur/MG_DAYS*100);
+      const sp = mgSpan(t);
+      let cells = '';
+      for (let d=0; d<MG_DAYS; d++){ const we = mgDayDates[d].getDay()===0 || mgDayDates[d].getDay()===6; cells += `<div class="mgcell${d===0?' today':''}${we?' we':''}" data-day="${d}"></div>`; }
+      let bar;
+      if (sp.e < 0) {
+        // Ya venció: no se dibuja como barra de hoy, se marca con su fecha real.
+        bar = `<div class="mgbar late" data-id="${t.id}" style="left:0">Venció ${mgFecha(sp.fin)}</div>`;
+      } else {
+        const a = Math.max(sp.s, 0), b = Math.min(sp.e, MG_DAYS - 1);
+        bar = `<div class="mgbar" data-id="${t.id}" style="left:${a*MG_COLW}px;width:${(b-a+1)*MG_COLW}px;background:${t.color||'#888'}"><span>${t.nombre}</span></div>`;
+      }
       return `<div class="mgrow">
         <div class="mgname" data-id="${t.id}">${t.nombre}</div>
-        <div class="mgtrack" style="width:${trackW}px">${cells}<div class="mgbar" data-id="${t.id}" style="left:${left}%;width:${width}%;background:${t.color||'#888'}"><span>${t.nombre}</span></div></div>
+        <div class="mgtrack" style="width:${trackW}px">${cells}${bar}</div>
       </div>`;
     }).join('');
     const rowsEl = document.getElementById('mgRows');
@@ -484,11 +508,15 @@ body{padding-bottom:100px}
       const t = cacheTareas.find(x=>x.id===bar.dataset.id); if (t) showTaskDetailD(t);
     };
     rowsEl.onmouseover = (e) => {
-      const el = e.target.closest('.mgname'); if(!el) return;
-      if (el.scrollWidth <= el.clientWidth) return;
-      showMgTip(el, el.textContent);
+      const el = e.target.closest('.mgbar, .mgname');
+      if (el) { const t = cacheTareas.find(x => x.id === el.dataset.id); if (t) showMgTip(el, null, mgTipHtml(t)); return; }
+      const cell = e.target.closest('.mgcell[data-day]');
+      if (cell) showMgDayTip(cell, +cell.dataset.day);
     };
-    rowsEl.onmouseout = (e) => { if (e.target.closest('.mgname')) hideMgTip(); };
+    rowsEl.onmouseout = (e) => { if (e.target.closest('.mgbar, .mgname, .mgcell')) hideMgTip(); };
+    const daysEl = document.getElementById('mgDays');
+    daysEl.onmouseover = (e) => { const c = e.target.closest('[data-day]'); if (c) showMgDayTip(c, +c.dataset.day); };
+    daysEl.onmouseout = (e) => { if (e.target.closest('[data-day]')) hideMgTip(); };
     document.getElementById('mgDays').onclick = (e) => {
       const cell = e.target.closest('[data-day]'); if(!cell) return;
       highlightMgDay(cell, +cell.dataset.day);
@@ -505,9 +533,13 @@ body{padding-bottom:100px}
     mgDayTipTimer = setTimeout(hideMgTip, 2500);
   }
 
-  function showMgTip(el, text){
+  function showMgDayTip(el, idx){
+    const d = mgDayDates[idx]; if (!d) return;
+    showMgTip(el, null, '<b>' + MG_DAYNAMES[d.getDay()] + ' ' + d.getDate() + ' ' + MG_MONTHNAMES[d.getMonth()] + '</b>' + (idx === 0 ? 'Hoy' : 'En ' + idx + (idx === 1 ? ' día' : ' días')));
+  }
+  function showMgTip(el, text, html){
     const tip = document.getElementById('mgTip');
-    tip.textContent = text;
+    if (html) tip.innerHTML = html; else tip.textContent = text;
     tip.classList.add('on');
     const r = el.getBoundingClientRect();
     const tipRect = tip.getBoundingClientRect();
