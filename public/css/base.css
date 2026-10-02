@@ -130,7 +130,7 @@ svg{display:block}
 .bt-combo{position:relative}
 .bt-cbox{display:flex;border:1px solid var(--border);background:var(--surface-2);border-radius:10px}
 .bt-cbox:focus-within{outline:2px solid var(--accent);outline-offset:-1px}
-.formf .bt-cbox input,.bt-cbox input{border:0;background:none;outline:0;border-radius:10px 0 0 10px;min-width:0}
+.formf .bt-cbox input,.bt-cbox input{flex:1;width:100%;min-width:0;border:0;background:none;outline:0;border-radius:10px 0 0 10px;padding:10px 11px;font-family:inherit;font-size:13px;color:var(--text)}
 .bt-cbtn{border:0;background:none;border-left:1px solid var(--border);padding:0 11px;border-radius:0 10px 10px 0;color:var(--text-dim)}
 .bt-cbtn:hover{color:var(--accent)}
 .bt-clist{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;margin:0;padding:4px;list-style:none;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 14px 30px -10px rgba(0,0,0,.4);max-height:210px;overflow:auto}
