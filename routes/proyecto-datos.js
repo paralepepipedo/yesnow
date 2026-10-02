@@ -360,13 +360,13 @@ router.post('/inversion', isAuth, async (req, res) => {
        b.fecha, personas, b.tareaId || null, req.session.usuario.id]
     );
     await asegurarGrupo(req.params.id, 'inversion', b.categoria);
-    // Reunión agendada: avisa a los participantes (o a todos si no se indicó ninguno), salvo a quien la registra.
+    // Reunión agendada (fecha de hoy o futura): avisa a los participantes, o a todos si no se indicó ninguno.
     const mov = { estado, tipo: b.tipo, categoria: String(b.categoria).trim() };
     if (esReunionAgendada(mov) && b.fecha >= hoyChile()) {
       try {
         const destino = personas.length ? personas : await todosLosUsuarios();
         for (const uid of destino) {
-          if (uid !== req.session.usuario.id) await notificar(uid, 'reunion', `Reunión agendada para el ${fechaLarga(b.fecha)}: ${String(b.concepto).trim()}`, req.params.id, null, { titulo: 'Reunión agendada', url: `/proyecto/${req.params.id}/inversion` });
+          await notificar(uid, 'reunion', `Reunión agendada para el ${fechaLarga(b.fecha)}: ${String(b.concepto).trim()}`, req.params.id, null, { titulo: 'Reunión agendada', url: `/proyecto/${req.params.id}/inversion` });
         }
       } catch (e) { console.error('[notificar reunion]', e); }
     }
