@@ -320,7 +320,7 @@ window.BT = (function(){
         const b = e.target.closest('button'); if (!b) return;
         closeMenu();
         if (b.dataset.m === 'pin') changePin();
-        else if (b.dataset.m === 'push') { try { pushOn ? await disablePush() : await enablePush(); } catch (err) { toast('No se pudo cambiar los avisos'); } }
+        else if (b.dataset.m === 'push') { try { pushOn ? await disablePush() : await enablePush(); } catch (err) { console.error('[avisos]', err); toast('No se pudo cambiar los avisos (' + (err && err.name || 'error') + ': ' + (err && err.message || '').slice(0, 90) + ')', 9000); } }
         else if (b.dataset.m === 'out') {
           const ok = await confirm({ title: 'Cerrar sesión', message: '¿Seguro que quieres salir?', okText: 'Cerrar sesión' });
           if (!ok) return;
